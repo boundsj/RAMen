@@ -482,8 +482,8 @@ shell exposes one. History measurements and incident markers never animate.
 RAMen requires Omarchy's Quickshell shell and plugin system, with its `qs.Ui`
 and `qs.Commons` modules. Native UI verification used Omarchy 4.0.4,
 Quickshell 0.3.1 and Qt 6.11.2; see the [coverage and limits](docs/qa/final-qa-evidence.md).
-Python 3 runs the bundled standard-library helper; there is no pip/npm install
-or build step. Memory and process metrics require Linux `/proc`; Storage
+Python 3 runs the bundled helper using only its standard library; no build
+step is needed. Memory and process metrics require Linux `/proc`; Storage
 requires Linux 6.8+ and a supported local filesystem. GPU readings depend on
 the driver's DRM statistics and may be unavailable.
 
