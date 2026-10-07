@@ -90,3 +90,12 @@ See [credits](../../CREDITS.md), [visual identity](../design/visual-identity.md)
 [History design](../design/history.md),
 [Storage design](../design/storage.md#original-design-and-influences) and
 [Apps design](../design/apps.md#original-design).
+
+## Marketplace preview
+
+The repository-root [preview.png](../../preview.png) is a byte-for-byte copy of
+`social-preview.png`: original RAMen branding generated from
+`scripts/build-art.py` and rendered by `scripts/render-art.py`. It is an
+illustration, not a native widget screenshot. The README's native gallery
+retains its separate capture provenance. After regenerating the artwork, copy
+`docs/art/social-preview.png` to `preview.png` as well.
