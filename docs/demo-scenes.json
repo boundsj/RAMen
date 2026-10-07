@@ -1,0 +1,1069 @@
+{
+  "green": {
+    "summary": {
+      "total": 7700852,
+      "available": 4823449,
+      "swapTotal": 8388608,
+      "swapUsed": 122880,
+      "zramRam": 40960,
+      "psiSome10": 0.2
+    },
+    "apps": [
+      {
+        "name": "Firefox (3 tabs, like a monk)",
+        "pss": 1153433,
+        "swap": 0,
+        "count": 14
+      },
+      {
+        "name": "Obsidian (second brain)",
+        "pss": 317440,
+        "swap": 0,
+        "count": 5
+      },
+      {
+        "name": "Spotify (lo-fi beats to debug to)",
+        "pss": 286720,
+        "swap": 0,
+        "count": 6
+      },
+      {
+        "name": "nvim (btw)",
+        "pss": 184320,
+        "swap": 0,
+        "count": 3,
+        "kind": "session",
+        "host": "Ghostty"
+      },
+      {
+        "name": "Hyprland",
+        "pss": 94208,
+        "swap": 0,
+        "count": 1,
+        "kind": "process",
+        "protected": true
+      },
+      {
+        "name": "cowsay --enterprise",
+        "pss": 65536,
+        "swap": 0,
+        "count": 2
+      },
+      {
+        "name": "htop watching htop",
+        "pss": 12288,
+        "swap": 0,
+        "count": 1,
+        "kind": "session",
+        "host": "Ghostty"
+      }
+    ]
+  },
+  "yellow": {
+    "summary": {
+      "total": 7700852,
+      "available": 1415577,
+      "swapTotal": 8388608,
+      "swapUsed": 2202009,
+      "zramRam": 716800,
+      "psiSome10": 3.1
+    },
+    "apps": [
+      {
+        "name": "Chrome (87 tabs)",
+        "pss": 2411724,
+        "swap": 614400,
+        "count": 41
+      },
+      {
+        "name": "Slack (4 workspaces)",
+        "pss": 921600,
+        "swap": 122880,
+        "count": 9
+      },
+      {
+        "name": "VS Code (12 windows)",
+        "pss": 839680,
+        "swap": 92160,
+        "count": 18
+      },
+      {
+        "name": "webpack --watch",
+        "pss": 624640,
+        "swap": 40960,
+        "count": 4,
+        "kind": "session",
+        "host": "Ghostty"
+      },
+      {
+        "name": "Docker Desktop (idle, allegedly)",
+        "pss": 552960,
+        "swap": 204800,
+        "count": 11
+      },
+      {
+        "name": "Spotify (lo-fi beats to debug to)",
+        "pss": 389120,
+        "swap": 61440,
+        "count": 6
+      },
+      {
+        "name": "Quickshell",
+        "pss": 97280,
+        "swap": 0,
+        "count": 1,
+        "kind": "process",
+        "protected": true
+      }
+    ]
+  },
+  "red": {
+    "summary": {
+      "total": 7700852,
+      "available": 317440,
+      "swapTotal": 8388608,
+      "swapUsed": 7130316,
+      "zramRam": 2411724,
+      "psiSome10": 34.0
+    },
+    "apps": [
+      {
+        "name": "Chrome (412 tabs)",
+        "pss": 3040870,
+        "swap": 2516582,
+        "count": 133
+      },
+      {
+        "name": "llama-70b (just one prompt)",
+        "pss": 1992294,
+        "swap": 1258291,
+        "count": 3,
+        "kind": "session",
+        "host": "Ghostty"
+      },
+      {
+        "name": "node_modules (self-aware)",
+        "pss": 1153433,
+        "swap": 819200,
+        "count": 64
+      },
+      {
+        "name": "Teams (on mute)",
+        "pss": 634880,
+        "swap": 716800,
+        "count": 12
+      },
+      {
+        "name": "Electron Toaster",
+        "pss": 798720,
+        "swap": 409600,
+        "count": 7
+      },
+      {
+        "name": "definitely-not-a-miner",
+        "pss": 552960,
+        "swap": 0,
+        "count": 1
+      },
+      {
+        "name": "Hyprland",
+        "pss": 112640,
+        "swap": 30720,
+        "count": 1,
+        "kind": "process",
+        "protected": true
+      },
+      {
+        "name": "vim (trying to exit since 2019)",
+        "pss": 49152,
+        "swap": 0,
+        "count": 1,
+        "kind": "session",
+        "host": "Ghostty"
+      }
+    ]
+  },
+  "history": {
+    "summary": {
+      "total": 7700852,
+      "available": 3565158,
+      "swapTotal": 8388608,
+      "swapUsed": 1153434,
+      "zramRam": 409600,
+      "psiSome10": 0.6
+    },
+    "apps": [
+      {
+        "name": "Chrome (47 tabs of noodle recipes)",
+        "pss": 2516582,
+        "swap": 419430,
+        "count": 52
+      },
+      {
+        "name": "Broth simulator (still simmering)",
+        "pss": 1048576,
+        "swap": 314573,
+        "count": 3
+      },
+      {
+        "name": "Slack (#lunch-orders)",
+        "pss": 629145,
+        "swap": 52428,
+        "count": 7
+      },
+      {
+        "name": "nvim tonkotsu.lua",
+        "pss": 167772,
+        "swap": 0,
+        "count": 2,
+        "kind": "session",
+        "host": "Ghostty"
+      },
+      {
+        "name": "Hyprland",
+        "pss": 94208,
+        "swap": 0,
+        "count": 1,
+        "kind": "process",
+        "protected": true
+      }
+    ],
+    "timeline": [
+      {
+        "minutes": 20,
+        "from": {
+          "available": 4823449,
+          "swapUsed": 122880,
+          "zramRam": 40960,
+          "psiSome10": 0.2,
+          "psiFull10": 0.0
+        },
+        "to": {
+          "available": 4600000,
+          "swapUsed": 135168,
+          "zramRam": 45056,
+          "psiSome10": 0.4
+        }
+      },
+      {
+        "minutes": 1,
+        "to": {
+          "available": 3900000,
+          "psiSome10": 7.5,
+          "psiFull10": 0.8
+        }
+      },
+      {
+        "minutes": 1,
+        "to": {
+          "available": 4500000,
+          "psiSome10": 0.5,
+          "psiFull10": 0.0
+        }
+      },
+      {
+        "minutes": 16,
+        "to": {
+          "available": 4300000,
+          "swapUsed": 163840,
+          "zramRam": 61440,
+          "psiSome10": 0.6
+        }
+      },
+      {
+        "pauseMinutes": 4,
+        "reason": "suspend"
+      },
+      {
+        "minutes": 8,
+        "to": {
+          "available": 1700000,
+          "swapUsed": 655360,
+          "zramRam": 204800,
+          "psiSome10": 6.5,
+          "psiFull10": 1.0
+        }
+      },
+      {
+        "minutes": 2,
+        "to": {
+          "available": 520000,
+          "swapUsed": 1468006,
+          "zramRam": 471859,
+          "psiSome10": 31.0,
+          "psiFull10": 9.0
+        }
+      },
+      {
+        "minutes": 4,
+        "to": {
+          "available": 3200000,
+          "swapUsed": 1258291,
+          "zramRam": 430080,
+          "psiSome10": 1.2,
+          "psiFull10": 0.1
+        }
+      },
+      {
+        "minutes": 2,
+        "set": {
+          "psiSome10": null,
+          "psiFull10": null
+        }
+      },
+      {
+        "minutes": 12,
+        "to": {
+          "available": 3565158,
+          "swapUsed": 1153434,
+          "zramRam": 409600,
+          "psiSome10": 0.6,
+          "psiFull10": 0.0
+        }
+      }
+    ],
+    "incidents": [
+      {
+        "startMinute": 20.7,
+        "endMinute": 21.4,
+        "severity": "warn",
+        "reason": "pressure",
+        "status": "interrupted"
+      },
+      {
+        "startMinute": 48.1,
+        "endMinute": 51.1,
+        "severity": "warn",
+        "reason": "pressure",
+        "observedApps": 3
+      },
+      {
+        "startMinute": 51.2,
+        "endMinute": 53.9,
+        "severity": "critical",
+        "reason": "pressure",
+        "observedApps": 5,
+        "thresholds": {
+          "warnPercent": 75,
+          "criticalPercent": 90,
+          "warnPressure": 5,
+          "criticalPressure": 20
+        },
+        "upgradeMinute": 51.7
+      }
+    ]
+  },
+  "apps": {
+    "summary": {
+      "total": 16106127,
+      "available": 5368709,
+      "swapTotal": 8388608,
+      "swapUsed": 524288,
+      "zramRam": 163840,
+      "psiSome10": 1.4
+    },
+    "cpu": {
+      "onlineCpus": 8
+    },
+    "apps": [
+      {
+        "name": "Chrome (63 tabs of ramen reviews)",
+        "pss": 2306867,
+        "swap": 307200,
+        "count": 48,
+        "cpuCorePercent": 38.4,
+        "demoMembers": [
+          {
+            "pid": 4101,
+            "name": "chrome",
+            "state": "S",
+            "pss": 612352,
+            "swap": 0,
+            "cpu": 9.8,
+            "command": "chrome --demo --window=ramen-reviews"
+          },
+          {
+            "pid": 4127,
+            "name": "chrome",
+            "state": "S",
+            "pss": 401408,
+            "swap": 0,
+            "cpu": 14.1,
+            "command": "chrome --type=renderer --demo-tab=tonkotsu-vs-shoyu"
+          },
+          {
+            "pid": 4133,
+            "name": "chrome",
+            "state": "S",
+            "pss": 389120,
+            "swap": 0,
+            "cpu": 8.2,
+            "command": "chrome --type=renderer --demo-tab=best-chopsticks-2026"
+          },
+          {
+            "pid": 4140,
+            "name": "chrome",
+            "state": "S",
+            "pss": 204800,
+            "swap": 0,
+            "cpu": 6.3,
+            "command": "chrome --type=gpu-process --demo"
+          }
+        ],
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "partial",
+            "vramKb": 421888,
+            "vramAllocatedKb": 450560,
+            "vramSharedKb": 0,
+            "vramOverlap": "none",
+            "vramStatus": "available",
+            "vramSemantics": "resident",
+            "systemKb": 98304,
+            "systemAllocatedKb": 98304,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "gfx": {
+                "percent": 6.2,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              },
+              "dec": {
+                "percent": 1.9,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              }
+            },
+            "clients": 1,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": 421888,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "partial",
+        "gpuCoverage": {
+          "measured": 47,
+          "members": 48
+        }
+      },
+      {
+        "name": "Broth simulator (rolling boil)",
+        "kind": "session",
+        "host": "Ghostty",
+        "pss": 1153433,
+        "swap": 0,
+        "count": 3,
+        "cpuCorePercent": 176.0,
+        "cpuStatus": "partial",
+        "cpuCoverage": {
+          "measured": 2,
+          "members": 3
+        },
+        "demoMembers": [
+          {
+            "pid": 5210,
+            "name": "broth-sim",
+            "state": "R",
+            "pss": 1101004,
+            "swap": 0,
+            "cpu": 175.2,
+            "command": "broth-sim --simmer --pot=large --threads=2"
+          },
+          {
+            "pid": 5208,
+            "name": "zsh",
+            "state": "S",
+            "pss": 52429,
+            "swap": 0,
+            "cpu": 0.8,
+            "command": "-zsh"
+          },
+          {
+            "pid": 5233,
+            "name": "stir",
+            "state": "S",
+            "pss": 0,
+            "swap": 0,
+            "cpu": null,
+            "command": "stir --every=30s",
+            "cpuState": "warming-up"
+          }
+        ],
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "available",
+            "vramKb": 6501171,
+            "vramAllocatedKb": 6815744,
+            "vramSharedKb": 0,
+            "vramOverlap": "none",
+            "vramStatus": "available",
+            "vramSemantics": "resident",
+            "systemKb": 131072,
+            "systemAllocatedKb": 131072,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "compute": {
+                "percent": 87.5,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              },
+              "gfx": {
+                "percent": 0.4,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              }
+            },
+            "clients": 1,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": 6501171,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "available",
+        "gpuCoverage": {
+          "measured": 3,
+          "members": 3
+        }
+      },
+      {
+        "name": "Steam Table (game, paused)",
+        "pss": 943718,
+        "swap": 215040,
+        "count": 9,
+        "cpuCorePercent": 4.6,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "available",
+            "vramKb": 1468006,
+            "vramAllocatedKb": 1572864,
+            "vramSharedKb": 524288,
+            "vramOverlap": "possible",
+            "vramStatus": "available",
+            "vramSemantics": "resident",
+            "systemKb": 262144,
+            "systemAllocatedKb": 294912,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "gfx": {
+                "percent": 0.0,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              },
+              "dma": {
+                "percent": null,
+                "status": "warming-up",
+                "basis": "busy-time",
+                "capacity": 1
+              }
+            },
+            "clients": 2,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": 1468006,
+        "gpuMemoryOverlap": true,
+        "gpuStatus": "available",
+        "gpuCoverage": {
+          "measured": 9,
+          "members": 9
+        }
+      },
+      {
+        "name": "Slack (#noodle-club)",
+        "pss": 655360,
+        "swap": 40960,
+        "count": 8,
+        "cpuCorePercent": 2.4
+      },
+      {
+        "name": "Electron Kettle",
+        "pss": 491520,
+        "swap": 122880,
+        "count": 6,
+        "cpuCorePercent": 0.0,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:00:02.0",
+            "driver": "i915",
+            "source": "drm-fdinfo",
+            "status": "available",
+            "vramKb": null,
+            "vramAllocatedKb": null,
+            "vramSharedKb": null,
+            "vramOverlap": "none",
+            "vramStatus": "unsupported",
+            "vramSemantics": "resident",
+            "systemKb": 184320,
+            "systemAllocatedKb": 204800,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "render": {
+                "percent": 2.7,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              },
+              "video": {
+                "percent": 0.0,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 2
+              }
+            },
+            "clients": 1,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "available",
+        "gpuCoverage": {
+          "measured": 6,
+          "members": 6
+        }
+      },
+      {
+        "name": "Noodle indexer (members hidden)",
+        "pss": 307200,
+        "swap": 0,
+        "count": 3,
+        "cpuCorePercent": 12.2,
+        "memoryStatus": "partial",
+        "memoryCoverage": {
+          "measured": 2,
+          "members": 3
+        },
+        "gpu": [],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "partial",
+        "gpuCoverage": {
+          "measured": 2,
+          "members": 3
+        }
+      },
+      {
+        "name": "Gyoza render queue (idle)",
+        "pss": 286720,
+        "swap": 0,
+        "count": 2,
+        "cpuCorePercent": 0.0,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:0a:00.0",
+            "driver": "xe",
+            "source": "drm-fdinfo",
+            "status": "asleep",
+            "vramKb": null,
+            "vramAllocatedKb": null,
+            "vramSharedKb": null,
+            "vramOverlap": "none",
+            "vramStatus": "asleep",
+            "vramSemantics": "resident",
+            "systemKb": null,
+            "systemAllocatedKb": null,
+            "systemSharedKb": null,
+            "systemOverlap": "none",
+            "systemStatus": "asleep",
+            "engines": {},
+            "clients": 0,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "asleep",
+        "gpuCoverage": {
+          "measured": 2,
+          "members": 2
+        }
+      },
+      {
+        "name": "chopstick-sync --watch",
+        "kind": "session",
+        "host": "Ghostty",
+        "pss": 215040,
+        "swap": 0,
+        "count": 4,
+        "cpuCorePercent": null,
+        "cpuStatus": "warming-up",
+        "gpu": [],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "warming-up",
+        "gpuCoverage": {
+          "measured": 0,
+          "members": 4
+        }
+      },
+      {
+        "name": "nvim tonkotsu.lua",
+        "kind": "session",
+        "host": "Ghostty",
+        "pss": 163840,
+        "swap": 0,
+        "count": 2,
+        "cpuCorePercent": 0.4
+      },
+      {
+        "name": "Hyprland",
+        "kind": "process",
+        "pss": 112640,
+        "swap": 0,
+        "count": 1,
+        "protected": true,
+        "cpuCorePercent": 3.1,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "shared",
+            "vramKb": null,
+            "vramAllocatedKb": null,
+            "vramSharedKb": null,
+            "vramOverlap": "none",
+            "vramStatus": "shared",
+            "vramSemantics": "resident",
+            "systemKb": null,
+            "systemAllocatedKb": null,
+            "systemSharedKb": null,
+            "systemOverlap": "none",
+            "systemStatus": "shared",
+            "engines": {},
+            "clients": 0,
+            "sharedClients": 1,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "shared",
+        "gpuCoverage": {
+          "measured": 1,
+          "members": 1
+        }
+      },
+      {
+        "name": "Quickshell",
+        "kind": "process",
+        "pss": 97280,
+        "swap": 0,
+        "count": 1,
+        "protected": true,
+        "cpuCorePercent": 1.2,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "partial",
+            "vramKb": 24576,
+            "vramAllocatedKb": 24576,
+            "vramSharedKb": 16384,
+            "vramOverlap": "none",
+            "vramStatus": "available",
+            "vramSemantics": "resident",
+            "systemKb": 8192,
+            "systemAllocatedKb": 8192,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "gfx": {
+                "percent": 0.3,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              }
+            },
+            "clients": 1,
+            "sharedClients": 1,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": 24576,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "partial",
+        "gpuCoverage": {
+          "measured": 1,
+          "members": 1
+        }
+      },
+      {
+        "name": "miso-mixer",
+        "kind": "process",
+        "pss": 65536,
+        "swap": 0,
+        "count": 1,
+        "cpuCorePercent": 0.1,
+        "gpu": [
+          {
+            "deviceId": "pci:0000:03:00.0",
+            "driver": "amdgpu",
+            "source": "drm-fdinfo",
+            "status": "available",
+            "vramKb": 0,
+            "vramAllocatedKb": 0,
+            "vramSharedKb": 0,
+            "vramOverlap": "none",
+            "vramStatus": "available",
+            "vramSemantics": "resident",
+            "systemKb": 4096,
+            "systemAllocatedKb": 4096,
+            "systemSharedKb": 0,
+            "systemOverlap": "none",
+            "systemStatus": "available",
+            "engines": {
+              "gfx": {
+                "percent": 0.0,
+                "status": "available",
+                "basis": "busy-time",
+                "capacity": 1
+              }
+            },
+            "clients": 1,
+            "sharedClients": 0,
+            "unidentified": 0,
+            "unread": 0
+          }
+        ],
+        "gpuMemoryKb": 0,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "available",
+        "gpuCoverage": {
+          "measured": 1,
+          "members": 1
+        }
+      },
+      {
+        "name": "secret-sauce-agent (memory hidden)",
+        "kind": "process",
+        "pss": null,
+        "swap": null,
+        "count": 1,
+        "memoryStatus": "unavailable",
+        "cpuCorePercent": 0.3,
+        "gpu": [],
+        "gpuMemoryKb": null,
+        "gpuMemoryOverlap": false,
+        "gpuStatus": "permission-denied",
+        "gpuCoverage": {
+          "measured": 0,
+          "members": 1
+        }
+      },
+      {
+        "name": "spin-the-noodle.sh",
+        "kind": "process",
+        "pss": 896,
+        "swap": 0,
+        "count": 1,
+        "cpuCorePercent": 99.6,
+        "demoMembers": [
+          {
+            "pid": 6602,
+            "name": "sh",
+            "state": "R",
+            "pss": 896,
+            "swap": 0,
+            "cpu": 99.6,
+            "command": "sh spin-the-noodle.sh --forever"
+          }
+        ]
+      }
+    ],
+    "gpu": {
+      "status": "available",
+      "memoryLens": true,
+      "devices": [
+        {
+          "id": "pci:0000:03:00.0",
+          "driver": "amdgpu",
+          "pdev": "0000:03:00.0",
+          "pciId": null,
+          "nodes": [
+            "card1",
+            "renderD129"
+          ],
+          "runtimeStatus": "active",
+          "status": "available",
+          "clients": 8,
+          "memory": {
+            "dedicated": {
+              "status": "available",
+              "semantics": "resident",
+              "regions": [
+                "vram"
+              ],
+              "seen": true
+            },
+            "system": {
+              "status": "available",
+              "semantics": "resident",
+              "regions": [
+                "cpu",
+                "gtt"
+              ],
+              "seen": true
+            }
+          },
+          "engines": {
+            "status": "available",
+            "names": [
+              "compute",
+              "dec",
+              "dma",
+              "gfx"
+            ],
+            "seen": [
+              "compute",
+              "dec",
+              "dma",
+              "gfx"
+            ]
+          },
+          "totals": {
+            "vramResidentKb": 8448409,
+            "vramSharedKb": 589824,
+            "vramOverlap": "possible",
+            "crossGroupClients": 1,
+            "crossGroupVramKb": 32768,
+            "deviceVramUsedKb": 9437184,
+            "deviceVramTotalKb": 16777216,
+            "unattributedVramKb": 988775,
+            "unattributedLowerBound": true
+          }
+        },
+        {
+          "id": "pci:0000:00:02.0",
+          "driver": "i915",
+          "pdev": "0000:00:02.0",
+          "pciId": null,
+          "nodes": [
+            "card0",
+            "renderD128"
+          ],
+          "runtimeStatus": "active",
+          "status": "available",
+          "clients": 1,
+          "memory": {
+            "dedicated": {
+              "status": "unsupported",
+              "semantics": "resident",
+              "regions": [],
+              "seen": false
+            },
+            "system": {
+              "status": "available",
+              "semantics": "resident",
+              "regions": [
+                "system0"
+              ],
+              "seen": true
+            }
+          },
+          "engines": {
+            "status": "available",
+            "names": [
+              "render",
+              "video"
+            ],
+            "seen": [
+              "render",
+              "video"
+            ]
+          },
+          "totals": {
+            "vramResidentKb": null,
+            "vramSharedKb": null,
+            "vramOverlap": null,
+            "crossGroupClients": 0,
+            "crossGroupVramKb": null,
+            "deviceVramUsedKb": null,
+            "deviceVramTotalKb": null,
+            "unattributedVramKb": null,
+            "unattributedLowerBound": false
+          }
+        },
+        {
+          "id": "pci:0000:0a:00.0",
+          "driver": "xe",
+          "pdev": "0000:0a:00.0",
+          "pciId": null,
+          "nodes": [
+            "card2",
+            "renderD130"
+          ],
+          "runtimeStatus": "suspended",
+          "status": "asleep",
+          "clients": 0,
+          "memory": {
+            "dedicated": {
+              "status": "asleep",
+              "semantics": "resident",
+              "regions": [],
+              "seen": false
+            },
+            "system": {
+              "status": "asleep",
+              "semantics": "resident",
+              "regions": [],
+              "seen": false
+            }
+          },
+          "engines": {
+            "status": "asleep",
+            "names": [],
+            "seen": []
+          },
+          "totals": {
+            "vramResidentKb": null,
+            "vramSharedKb": null,
+            "vramOverlap": null,
+            "crossGroupClients": 0,
+            "crossGroupVramKb": null,
+            "deviceVramUsedKb": null,
+            "deviceVramTotalKb": null,
+            "unattributedVramKb": null,
+            "unattributedLowerBound": false
+          }
+        }
+      ]
+    }
+  }
+}

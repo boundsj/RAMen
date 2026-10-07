@@ -1,0 +1,15 @@
+module qs.Ui
+BarWidget 1.0 BarWidget.qml
+Panel 1.0 Panel.qml
+PanelController 1.0 PanelController.qml
+KeyboardPanel 1.0 KeyboardPanel.qml
+PanelKeyCatcher 1.0 PanelKeyCatcher.qml
+PanelHero 1.0 PanelHero.qml
+PanelSeparator 1.0 PanelSeparator.qml
+PanelSectionHeader 1.0 PanelSectionHeader.qml
+PanelActionButton 1.0 PanelActionButton.qml
+PanelToolTip 1.0 PanelToolTip.qml
+BorderSurface 1.0 BorderSurface.qml
+CursorSurface 1.0 CursorSurface.qml
+WidgetButton 1.0 WidgetButton.qml
+BorderOverlay 1.0 BorderOverlay.qml

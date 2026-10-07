@@ -1,0 +1,257 @@
+{
+  "reviewedHead": "4f934763883f4d876c5d7a8c5c12a0d9e7f07026",
+  "developmentReview": "Archived pre-publication PR #3",
+  "platform": {
+    "omarchy": "4.0.4-1",
+    "hyprland": "0.56.2-2",
+    "quickshell": "0.3.1-1",
+    "qtBase": "6.11.2-3",
+    "qtDeclarative": "6.11.2-1"
+  },
+  "display": {
+    "output": "eDP-1",
+    "type": "physical",
+    "nativePixels": [
+      2560,
+      1600
+    ],
+    "logicalPixels": [
+      1600,
+      1000
+    ],
+    "scale": 1.6
+  },
+  "appearance": {
+    "theme": "Tokyo Night",
+    "font": "JetBrainsMono Nerd Font",
+    "ramanAnimations": "off",
+    "dnd": "off"
+  },
+  "notes": [
+    "Direct native-resolution grim captures of the real widget on an empty workspace. No image synthesis, composites or retouching.",
+    "Memory/History masters use built-in isolated demos. The notification uses a QA-only synthetic live producer, the reviewed detector, and the installed notification helper. No real memory pressure was induced.",
+    "Masters were copied byte-for-byte. Derivatives are separate PNGs following each recorded recipe; the toast is resized from 558 to 616 pixels wide, while other derivatives retain native width. README sets display width."
+  ],
+  "captures": [
+    {
+      "file": "raman-h3-memory-green-dark-160pct.png",
+      "sha256": "981d6cee4b21c2127cd6465d212fd901ec4306e83141f7f7efcffc9483a274e6",
+      "capturedAt": "2026-10-04T20:00:43.350102+00:00",
+      "source": "built-in demo green",
+      "captureCommand": "grim -g \"1180,29 385x522\" <master.png>",
+      "logicalGeometry": "1180,29 385x522",
+      "nativePngSize": "616x835",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/panel-green.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "c543643647032567476db199e1fc7579c1e2679252c904bd741e51e47bdc1ce7"
+    },
+    {
+      "file": "raman-h3-bar-green-dark-160pct.png",
+      "sha256": "de2bf8b7b374229443347b5db1aec1b9bb13be25336d42413f58b10e7e852d9e",
+      "capturedAt": "2026-10-04T20:00:43.889959+00:00",
+      "source": "built-in demo green",
+      "captureCommand": "grim -g \"1347,0 51x24\" <master.png>",
+      "logicalGeometry": "1347,0 51x24",
+      "nativePngSize": "81x38",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/bar-green.png",
+      "derivativeRecipe": "magick <master.png> -resize 81x <derivative.png>",
+      "derivativeSha256": "36eaa3f2c3d41eb375c97963565a5b6a4b7b5fe0294173634aff47ee937aec03"
+    },
+    {
+      "file": "raman-h3-memory-yellow-dark-160pct.png",
+      "sha256": "3062a33d806069e30a5cb8324c5d66a11c5a9ff14304c35151aa9ee91d7614d5",
+      "capturedAt": "2026-10-04T20:00:47.576334+00:00",
+      "source": "built-in demo yellow",
+      "captureCommand": "grim -g \"1180,29 385x522\" <master.png>",
+      "logicalGeometry": "1180,29 385x522",
+      "nativePngSize": "616x835",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/panel-yellow.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "9453d27db978507bc10a0a30534b83ac766aecfd59d60d5717c89b7c03f6cca4"
+    },
+    {
+      "file": "raman-h3-bar-yellow-dark-160pct.png",
+      "sha256": "096e32b331f68c37206450cc0ae27c57f6ac6944dd2ae7a58e4339bdc167fff2",
+      "capturedAt": "2026-10-04T20:00:48.153785+00:00",
+      "source": "built-in demo yellow",
+      "captureCommand": "grim -g \"1347,0 51x24\" <master.png>",
+      "logicalGeometry": "1347,0 51x24",
+      "nativePngSize": "81x38",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/bar-yellow.png",
+      "derivativeRecipe": "magick <master.png> -resize 81x <derivative.png>",
+      "derivativeSha256": "d42669974876f2a8378d4225dcd3faadddbad2082d10f7b066df31d5e7d67041"
+    },
+    {
+      "file": "raman-h3-memory-red-dark-160pct.png",
+      "sha256": "a3823a4f9a97190570144631ec631d8e616327a4153beda2faa7595ed11381e8",
+      "capturedAt": "2026-10-04T20:00:52.033607+00:00",
+      "source": "built-in demo red; kill armed",
+      "captureCommand": "grim -g \"1180,29 385x565\" <master.png>",
+      "logicalGeometry": "1180,29 385x565",
+      "nativePngSize": "616x904",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/panel-red.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "652545cd37b6335a523bf265d3ed1f14bc482d602ba51bd419e0686ce6a96e51"
+    },
+    {
+      "file": "raman-h3-bar-red-dark-160pct.png",
+      "sha256": "ecaecd6ae6903a1d5dec0c01b7f64695471622f5a7f108419b11b2fab8e119b9",
+      "capturedAt": "2026-10-04T20:00:52.570351+00:00",
+      "source": "built-in demo red",
+      "captureCommand": "grim -g \"1347,0 51x24\" <master.png>",
+      "logicalGeometry": "1347,0 51x24",
+      "nativePngSize": "81x38",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/bar-red.png",
+      "derivativeRecipe": "magick <master.png> -resize 81x <derivative.png>",
+      "derivativeSha256": "03eeb4ad95dc4888218ab5abe9c1fa9459d091c552338a0eb0db32c2814853ff"
+    },
+    {
+      "file": "raman-h3-history-5m-dark-160pct.png",
+      "sha256": "12987449dece546e421da626d85c0f9e041202db5ee6c2e4f690328682999d31",
+      "capturedAt": "2026-10-04T20:00:56.734080+00:00",
+      "source": "built-in demo history 5m",
+      "captureCommand": "grim -g \"1180,29 385x509\" <master.png>",
+      "logicalGeometry": "1180,29 385x509",
+      "nativePngSize": "616x814",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/history-5m.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "40ef119c0056bb1e5113f50a492938b8a1b7e65adb8b921f6622ace720789a44"
+    },
+    {
+      "file": "raman-h3-history-1h-dark-160pct.png",
+      "sha256": "de63f39d4f1004996223b1d8a24712bef2f3bfee4f773139249ac1f1e34d42ba",
+      "capturedAt": "2026-10-04T20:00:59.603134+00:00",
+      "source": "built-in demo history 1h",
+      "captureCommand": "grim -g \"1180,29 385x615\" <master.png>",
+      "logicalGeometry": "1180,29 385x615",
+      "nativePngSize": "616x984",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/history-1h.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "44ad7b6f7c1b9e13e7a4e589ef44583f6cbae736b57ad797ed8b599395e38c41"
+    },
+    {
+      "file": "raman-h3-history-24h-dark-160pct.png",
+      "sha256": "6a96f67b4a9133057621b274a0bc42acc5d98957392a12291aab8d94498563a0",
+      "capturedAt": "2026-10-04T20:01:02.802917+00:00",
+      "source": "built-in demo history 24h",
+      "captureCommand": "grim -g \"1180,29 385x629\" <master.png>",
+      "logicalGeometry": "1180,29 385x629",
+      "nativePngSize": "616x1006",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/history-24h.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "c45c2a37a6bf39b9669823c4371581b908dd7a0806b385bbcce669196a42f36d"
+    },
+    {
+      "file": "raman-h3-history-receipt-dark-160pct.png",
+      "sha256": "4df43634d9ce99e1a80d81a6be2279dec9313bf13368107c534d8ebc23f0035b",
+      "capturedAt": "2026-10-04T20:01:06.566689+00:00",
+      "source": "built-in demo history; demo-2 receipt",
+      "captureCommand": "grim -g \"1180,29 385x735\" <master.png>",
+      "logicalGeometry": "1180,29 385x735",
+      "nativePngSize": "616x1176",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "off",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": true,
+      "derivative": "../../screenshots/history-receipt.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "d9a62a6cb0d30f9afef8cb38210041ce89f055b99ba4521197141842580e6569"
+    },
+    {
+      "file": "raman-h3-critical-toast-dark-160pct.png",
+      "sha256": "8e1bcd9c9c44b2954baf5a48d8f1bc91621d9e3b91c09570b1703aa60978a728",
+      "capturedAt": "2026-10-04T20:01:52.150912+00:00",
+      "source": "controlled synthetic live; critical notification acknowledged; no real memory distress",
+      "captureCommand": "grim -g \"1246,29 349x57\" <master.png>",
+      "logicalGeometry": "1246,29 349x57",
+      "nativePngSize": "558x91",
+      "settings": {
+        "enabled": true,
+        "persist": true,
+        "mode": "warning-and-critical",
+        "hold": 2,
+        "cooldown": 60
+      },
+      "demo": false,
+      "derivative": "../../screenshots/critical-toast.png",
+      "derivativeRecipe": "magick <master.png> -resize 616x <derivative.png>",
+      "derivativeSha256": "dcc8d5dc40c0f9bfba7cb93deba9d243fed1917941acf86dae9e0dd254a58fda"
+    }
+  ]
+}

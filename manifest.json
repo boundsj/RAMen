@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "id": "boundsj.raman",
+  "name": "RAMen",
+  "version": "0.1.0",
+  "author": "boundsj",
+  "license": "MIT",
+  "description": "RAM gauge, guarded app termination, memory history, opt-in sustained incident alerts, an on-demand storage explorer and an Apps page with CPU/RAM rails and per-app GPU memory where the kernel reports it.",
+  "kinds": [
+    "bar-widget",
+    "service"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml",
+    "service": "Service.qml"
+  },
+  "barWidget": {
+    "displayName": "RAMen",
+    "description": "Memory gauge; click for the Memory, History, Storage and Apps pages",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "schema": [
+      {
+        "key": "label",
+        "type": "enum",
+        "label": "Label",
+        "options": [
+          "percent",
+          "used",
+          "available",
+          "none"
+        ],
+        "defaultValue": "percent",
+        "description": "Text next to the gauge: percent used, GB used, GB available, or gauge only."
+      },
+      {
+        "key": "animations",
+        "type": "enum",
+        "label": "Measurement animations",
+        "options": [
+          "on",
+          "off"
+        ],
+        "defaultValue": "on",
+        "description": "Turn off RAMen gauge and Memory transitions. A shell reduced-motion preference also disables them. History never animates measurements."
+      },
+      {
+        "key": "historyEnabled",
+        "type": "boolean",
+        "label": "Collect memory history",
+        "defaultValue": true,
+        "description": "Collect samples and sustained incidents. Required for alerts. Off keeps live status and preserves the saved file."
+      },
+      {
+        "key": "historyPersist",
+        "type": "boolean",
+        "label": "Save history across restarts",
+        "defaultValue": true,
+        "description": "Off uses session-only history without loading or saving the history file. Clear history explicitly erases saved history."
+      },
+      {
+        "key": "alertMode",
+        "type": "enum",
+        "label": "Incident notifications",
+        "options": [
+          "off",
+          "critical",
+          "warning-and-critical"
+        ],
+        "defaultValue": "off",
+        "description": "Requires history collection. Turning alerts off keeps incidents and bar colors."
+      },
+      {
+        "key": "alertHoldSeconds",
+        "type": "integer",
+        "label": "Incident hold (seconds)",
+        "defaultValue": 10,
+        "min": 2,
+        "max": 60
+      },
+      {
+        "key": "alertCooldownSeconds",
+        "type": "integer",
+        "label": "Notification cooldown (seconds)",
+        "defaultValue": 300,
+        "min": 60,
+        "max": 3600
+      },
+      {
+        "key": "warnPercent",
+        "type": "integer",
+        "label": "Yellow at % used",
+        "defaultValue": 75,
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "criticalPercent",
+        "type": "integer",
+        "label": "Red at % used",
+        "defaultValue": 90,
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "warnPressure",
+        "type": "integer",
+        "label": "Yellow at memory pressure %",
+        "description": "PSI some avg10: share of time tasks stalled on memory.",
+        "defaultValue": 5,
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "criticalPressure",
+        "type": "integer",
+        "label": "Red at memory pressure %",
+        "defaultValue": 20,
+        "min": 1,
+        "max": 100
+      },
+      {
+        "key": "storageShowMap",
+        "type": "boolean",
+        "label": "Show Storage folder bands",
+        "defaultValue": true
+      },
+      {
+        "key": "storageRememberScope",
+        "type": "boolean",
+        "label": "Remember Storage scope this session",
+        "defaultValue": true
+      },
+      {
+        "key": "appsDefaultSort",
+        "type": "enum",
+        "label": "Apps page sort",
+        "options": [
+          "memory",
+          "cpu",
+          "gpu-memory"
+        ],
+        "defaultValue": "memory",
+        "description": "How the Apps page ranks apps when it opens. GPU memory needs a GPU that reports dedicated memory per client (DRM fdinfo); until it does, the page shows Memory with a note."
+      },
+      {
+        "key": "gpuMetrics",
+        "type": "enum",
+        "label": "Apps GPU metrics",
+        "options": [
+          "auto",
+          "off"
+        ],
+        "defaultValue": "auto",
+        "description": "auto reads per-app GPU memory and engine use from the kernel's DRM fdinfo only while the Apps page is visible, at most every 5 s, without waking a sleeping GPU. off does no GPU work. Never changes the memory bar."
+      }
+    ]
+  }
+}

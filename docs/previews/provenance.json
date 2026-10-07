@@ -1,0 +1,224 @@
+{
+  "note": "Qt offscreen renders of the current QML for documentation. Not native Omarchy screenshots; native captures are a final QA task (docs/qa/final-qa.md section 6).",
+  "code": "the commit that adds or last changes each file (see git log docs/previews)",
+  "renderer": {
+    "qt": "6.8.2",
+    "platform": "QT_QPA_PLATFORM=offscreen",
+    "scale": "QT_SCALE_FACTOR=2",
+    "animations": "off (the gallery captures the settled state)",
+    "container": "raman-s2-fixes:local (Debian 13 ARM64, Python 3.13.5)",
+    "host_ui": "Omarchy v4.0.4 shell/Ui and shell/Commons at c668141e9c42b13c80c9ca4ea108e11708c5e8a5 (unmodified), plus tests/qml/stubs"
+  },
+  "font": "JetBrainsMono Nerd Font v3.4.0 via a fontconfig monospace alias (SIL OFL 1.1; not tracked)",
+  "theme": {
+    "dark": {
+      "background": "#101315",
+      "foreground": "#cacccc"
+    },
+    "light": {
+      "background": "#e6e7ed",
+      "foreground": "#343b58"
+    },
+    "accent": "#7aa2f7",
+    "semantic": "RAMen fallback palette ok #7fbf7f, warn #e5c07b, critical #e06c6c, contrast-adjusted by Design.js"
+  },
+  "data": "probe demo scenes via tests/make_qml_fixtures.py (raman_probe.load_demo, demo_preview, demo_gpu, raman_apps query/details); History demo timeline; synthetic Serving Board Storage listing in the test. Nothing scanned or signalled.",
+  "command": "QT_SCALE_FACTOR=2 RAMAN_QML_SHELL=<omarchy>/shell scripts/check-qml.sh Gallery::test_bar Gallery::test_memory Gallery::test_history Gallery::test_storage Gallery::test_apps",
+  "files": [
+    {
+      "file": "docs/previews/bar-green-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_bar",
+      "state": "bar-green-dark",
+      "description": "demo green summary, dark bar",
+      "pixels": [
+        152,
+        92
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "4798cc4233254b92929627c43d9bb1bd0de99c9e361e9e17845d4731be6dae03"
+    },
+    {
+      "file": "docs/previews/bar-yellow-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_bar",
+      "state": "bar-yellow-dark",
+      "description": "demo yellow summary, dark bar",
+      "pixels": [
+        152,
+        92
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "fe39e722e12a26f6332d49d9792b62e9dc4c43ccf476ea2ab93df07da8da4655"
+    },
+    {
+      "file": "docs/previews/bar-red-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_bar",
+      "state": "bar-red-dark",
+      "description": "demo red summary, dark bar",
+      "pixels": [
+        152,
+        92
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "1fadb8f3f50680a2f0cce646b77196e90b7380f8561d86a2b44d8a395155679e"
+    },
+    {
+      "file": "docs/previews/bar-yellow-light.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_bar",
+      "state": "bar-yellow-light",
+      "description": "demo yellow summary, light bar",
+      "pixels": [
+        152,
+        92
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "2527e92c726c7c7a14ca61100d937c496660812f33ad5caf18bb3257e412c61c"
+    },
+    {
+      "file": "docs/previews/memory-red-armed-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_memory",
+      "state": "memory-red-armed-420-dark",
+      "description": "demo red, Chrome armed (never confirmed), 420 px, dark",
+      "pixels": [
+        840,
+        1268
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "cdc095b7e115f138db1522cd85950aa80863211f09a823b02d377949e467fcd3"
+    },
+    {
+      "file": "docs/previews/memory-yellow-420-light.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_memory",
+      "state": "memory-yellow-420-light",
+      "description": "demo yellow, 420 px, light",
+      "pixels": [
+        840,
+        1174
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "5c3e9fe98e59a31e8067cd643442e771b2c9cd94b48f7c4d5add75e058754c2e"
+    },
+    {
+      "file": "docs/previews/history-1h-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_history",
+      "state": "history-1h-420-dark",
+      "description": "History demo timeline, 1 hour, 420 px, dark",
+      "pixels": [
+        840,
+        1384
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "7e0ba5d3d617a7082cd993996959fef3023b10fa4f29f22d687d78837efb2144"
+    },
+    {
+      "file": "docs/previews/history-receipt-420-light.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_history",
+      "state": "history-receipt-420-light",
+      "description": "History demo timeline, critical receipt inspected, 420 px, light",
+      "pixels": [
+        840,
+        1748
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "b7c2d40c065bb2cca1fbb409a8bc26b0753f4d187ca200e9f264c672c7e8865e"
+    },
+    {
+      "file": "docs/previews/storage-ready-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_storage",
+      "state": "storage-ready-420-dark",
+      "description": "synthetic Serving Board listing, broth-stock selected, 420 px, dark",
+      "pixels": [
+        840,
+        1754
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "7e72b5d9a3e9cdf026806886d0175889e4b6e904f98559a75f370e6fb50f0e6e"
+    },
+    {
+      "file": "docs/previews/apps-memory-armed-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_apps",
+      "state": "apps-memory-armed-420-dark",
+      "description": "demo apps, Memory lens, Broth simulator armed (never confirmed), 420 px, dark",
+      "pixels": [
+        840,
+        1796
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "ad5e4ea83188b0c5c148919e126358a2b861d4f4f925f49ec1775572243bef7e"
+    },
+    {
+      "file": "docs/previews/apps-gpu-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_apps",
+      "state": "apps-gpu-420-dark",
+      "description": "demo apps, GPU memory lens, synthetic GPU readings, 420 px, dark",
+      "pixels": [
+        840,
+        1972
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "a6373e7179bec6c8ecc37f81c7d5fd15b2389f22503f7079fbdbbd7955605264"
+    },
+    {
+      "file": "docs/previews/apps-details-420-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_apps",
+      "state": "apps-details-420-dark",
+      "description": "demo apps, Broth simulator details, synthetic members, 420 px, dark",
+      "pixels": [
+        840,
+        1290
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "a349e3db34fb53b5681bb86762b505a58425f3306a0ad70de527f2982a59e8a9"
+    },
+    {
+      "file": "docs/previews/apps-memory-protected-340-dark.png",
+      "kind": "qt-offscreen-synthetic-render",
+      "native": false,
+      "test": "tests/qml/tst_gallery.qml",
+      "function": "test_apps",
+      "state": "apps-memory-protected-340-dark",
+      "description": "demo apps, Memory lens, Hyprland (protected) selected, 340 px, dark",
+      "pixels": [
+        680,
+        1824
+      ],
+      "devicePixelRatio": 2,
+      "sha256": "351e9f99e6cec1e82a0fcea28ed4be44ce34bc227bf656b8fa98044f7a73c928"
+    }
+  ]
+}

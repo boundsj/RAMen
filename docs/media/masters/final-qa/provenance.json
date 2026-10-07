@@ -1,0 +1,199 @@
+{
+  "runtimeCandidate": "6ebe9f05712def5964024f138ad5d2552567c606",
+  "testHarnessRevision": "6f641978c9626b91ca4f00e9b40e577ddb6f3426",
+  "platform": {
+    "kernel": "7.2.5-3-omarchy",
+    "omarchy": "4.0.4-1",
+    "quickshell": "0.3.1",
+    "qt": "6.11.2"
+  },
+  "method": "Direct grim capture; lossless panel crop; no retouching, reconstruction or composites. Display copies are losslessly re-encoded.",
+  "captures": [
+    {
+      "file": "raman-memory-red-tokyo-night-160pct.png",
+      "candidate": "6ebe9f05712def5964024f138ad5d2552567c606",
+      "capture_time_utc": "2026-10-07T03:24:41.977440+00:00",
+      "native": true,
+      "synthetic": true,
+      "scene": "red",
+      "page": "memory",
+      "keys": [],
+      "output_native_size": [
+        2560,
+        1600
+      ],
+      "logicalOutputPixels": [
+        1600,
+        1000
+      ],
+      "scale": 1.6,
+      "theme": "Tokyo Night",
+      "font": "JetBrainsMono Nerd Font",
+      "crop": "616x928+1880+46",
+      "master_sha256": "ed439b260e80964067441efdee1f9207004bf4039c10e91a80c8c004337436c2",
+      "master_size": [
+        616,
+        928
+      ],
+      "sourceMeaning": "Built-in red scene; all app names and readings are synthetic.",
+      "demo": true,
+      "syntheticFixture": false,
+      "settings": {
+        "animations": "on",
+        "appsDefaultSort": "memory",
+        "gpuMetrics": "auto",
+        "storageShowMap": true,
+        "storageRememberScope": true
+      },
+      "outputType": "physical",
+      "derivative": {
+        "path": "../../../screenshots/final-qa/memory-red.png",
+        "recipe": "magick <master.png> -strip -define png:compression-level=9 <derivative.png>",
+        "exitCode": 0,
+        "sha256": "f5ff27bf480c38821ced4f0b627b60b6475658b3106ac48d27820cfb55013895"
+      }
+    },
+    {
+      "file": "raman-history-tokyo-night-160pct.png",
+      "candidate": "6ebe9f05712def5964024f138ad5d2552567c606",
+      "capture_time_utc": "2026-10-07T03:25:18.979789+00:00",
+      "native": true,
+      "synthetic": true,
+      "scene": "history",
+      "page": "history",
+      "keys": [],
+      "output_native_size": [
+        2560,
+        1600
+      ],
+      "logicalOutputPixels": [
+        1600,
+        1000
+      ],
+      "scale": 1.6,
+      "theme": "Tokyo Night",
+      "font": "JetBrainsMono Nerd Font",
+      "crop": "616x1004+1880+46",
+      "master_sha256": "b8168a6582b2e2cc9099642ad770a24dc52ce2c9cf0e6560e510644d8fbe0a2a",
+      "master_size": [
+        616,
+        1004
+      ],
+      "sourceMeaning": "Built-in History scene on its fake clock; no live incident data.",
+      "demo": true,
+      "syntheticFixture": false,
+      "settings": {
+        "animations": "on",
+        "appsDefaultSort": "memory",
+        "gpuMetrics": "auto",
+        "storageShowMap": true,
+        "storageRememberScope": true
+      },
+      "outputType": "physical",
+      "derivative": {
+        "path": "../../../screenshots/final-qa/history.png",
+        "recipe": "magick <master.png> -strip -define png:compression-level=9 <derivative.png>",
+        "exitCode": 0,
+        "sha256": "c6b9c71bd72c2c4526a396c6fc2897bcae2988779c9885ebed10261037d8e760"
+      }
+    },
+    {
+      "file": "raman-storage-ready-tokyo-night-160pct.png",
+      "candidate": "6ebe9f05712def5964024f138ad5d2552567c606",
+      "capture_time_utc": "2026-10-07T03:25:37.762617+00:00",
+      "native": true,
+      "synthetic": true,
+      "scene": "original Storage fixture",
+      "page": "storage",
+      "keys": [],
+      "output_native_size": [
+        2560,
+        1600
+      ],
+      "logicalOutputPixels": [
+        1600,
+        1000
+      ],
+      "scale": 1.6,
+      "theme": "Tokyo Night",
+      "font": "JetBrainsMono Nerd Font",
+      "crop": "616x1360+1880+46",
+      "master_sha256": "4abdeaefd56963b4130d0cf71245f375e569b23c8e89b8d09e32ed02ed0aeb58",
+      "master_size": [
+        616,
+        1360
+      ],
+      "sourceMeaning": "Original storage-demo.py fixture at a neutral path; real Btrfs allocation and real filesystem capacity, not invented readings.",
+      "demo": false,
+      "syntheticFixture": true,
+      "settings": {
+        "animations": "on",
+        "appsDefaultSort": "memory",
+        "gpuMetrics": "auto",
+        "storageShowMap": true,
+        "storageRememberScope": true
+      },
+      "outputType": "physical",
+      "derivative": {
+        "path": "../../../screenshots/final-qa/storage-ready.png",
+        "recipe": "magick <master.png> -strip -define png:compression-level=9 <derivative.png>",
+        "exitCode": 0,
+        "sha256": "08d110c980f79ec8c555979c605b96bcfa04c87f85810a0b31bee9d69f712384"
+      }
+    },
+    {
+      "file": "raman-apps-cpu-tokyo-night-160pct.png",
+      "candidate": "6ebe9f05712def5964024f138ad5d2552567c606",
+      "capture_time_utc": "2026-10-07T03:24:57.069628+00:00",
+      "native": true,
+      "synthetic": true,
+      "scene": "apps",
+      "page": "apps",
+      "keys": [
+        [
+          "j"
+        ],
+        [
+          "l"
+        ],
+        [
+          "j"
+        ]
+      ],
+      "output_native_size": [
+        2560,
+        1600
+      ],
+      "logicalOutputPixels": [
+        1600,
+        1000
+      ],
+      "scale": 1.6,
+      "theme": "Tokyo Night",
+      "font": "JetBrainsMono Nerd Font",
+      "crop": "616x1300+1880+46",
+      "master_sha256": "5a01724e4c212c9600d1e7ffca04ba95d077abca71aae1e42b604489d6b8dc81",
+      "master_size": [
+        616,
+        1300
+      ],
+      "sourceMeaning": "Built-in Apps scene; every row, command and GPU reading is synthetic.",
+      "demo": true,
+      "syntheticFixture": false,
+      "settings": {
+        "animations": "on",
+        "appsDefaultSort": "memory",
+        "gpuMetrics": "auto",
+        "storageShowMap": true,
+        "storageRememberScope": true
+      },
+      "outputType": "physical",
+      "derivative": {
+        "path": "../../../screenshots/final-qa/apps-cpu.png",
+        "recipe": "magick <master.png> -strip -define png:compression-level=9 <derivative.png>",
+        "exitCode": 0,
+        "sha256": "678a348e1ab1ba949c742568a2ee9f7ae32fcc2900207750d86a26b9192571f0"
+      }
+    }
+  ]
+}

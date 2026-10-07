@@ -1,0 +1,31 @@
+# Python bytecode and tooling caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# QML tooling
+.qmlcache/
+.qmlls.ini
+
+# Node (tests use only node built-ins, but keep stray installs out)
+node_modules/
+
+# Local environment and credentials
+.env
+.env.*
+
+# Logs, screenshots and scratch output
+*.log
+/.agent-artifacts/
+/scratch/
+/screenshots/
+
+# Editor and OS files
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+.DS_Store
