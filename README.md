@@ -477,10 +477,90 @@ preserves notification cooldowns. Collection off does not delete saved history.
 transitions; a shell reduced-motion preference also disables them where the
 shell exposes one. History measurements and incident markers never animate.
 
-## Install / dev
+## Install
+
+RAMen requires Omarchy's Quickshell shell and plugin system, with its `qs.Ui`
+and `qs.Commons` modules. Native UI verification used Omarchy 4.0.4,
+Quickshell 0.3.1 and Qt 6.11.2; see the [coverage and limits](docs/qa/final-qa-evidence.md).
+Python 3 runs the bundled standard-library helper; there is no pip/npm install
+or build step. Memory and process metrics require Linux `/proc`; Storage
+requires Linux 6.8+ and a supported local filesystem. GPU readings depend on
+the driver's DRM statistics and may be unavailable.
+
+Optional desktop integrations are `wl-copy` (from `wl-clipboard`) for copying
+Storage paths, and system GIO/GLib, the desktop portal and a file manager for
+opening directories. Incident notifications use Omarchy's
+`omarchy-notification-send` helper. Missing integrations report an unavailable
+action; they do not require installing Python packages. Git and Omarchy's own
+CLI dependencies are needed for plugin installation and updates. Node, Qt test
+tools, image tools and screenshot tools below are development dependencies.
+
+From a terminal in your Omarchy session:
 
 ```bash
+omarchy plugin add https://github.com/boundsj/RAMen --enable
+omarchy plugin validate "$HOME/.config/omarchy/plugins/boundsj.raman"
+omarchy-shell boundsj.raman status
+```
+
+The plugin manager asks before installation and can offer a bar position. To
+place an installed widget explicitly on the right:
+
+```bash
+omarchy plugin enable boundsj.raman --section right
+```
+
+The plugin ID is `boundsj.raman`; keep that spelling in commands. Omarchy
+installs it under `~/.config/omarchy/plugins/boundsj.raman`. RAMen has no custom
+installer and does not install packages or rewrite your shell configuration;
+Omarchy applies the enable/placement changes you request.
+
+### Update, disable and remove
+
+```bash
+omarchy plugin update boundsj.raman
+omarchy plugin disable boundsj.raman
+omarchy plugin remove boundsj.raman
+```
+
+These are separate actions: update when you want the latest code, disable to
+stop loading the plugin while retaining its installation, or remove to
+uninstall it. Update and removal prompt for confirmation. Re-enable a disabled
+installation with `omarchy plugin enable boundsj.raman`.
+
+The current plugin manager installs and updates the repository's current HEAD.
+That commit may differ from a marketplace-verified snapshot. Check the installed
+revision with `git -C ~/.config/omarchy/plugins/boundsj.raman rev-parse HEAD`.
+
+Removal leaves RAMen's history and Storage cache in place:
+`${XDG_STATE_HOME:-~/.local/state}/raman` and
+`${XDG_CACHE_HOME:-~/.cache}/raman/storage`. Deleting those directories is a
+separate, optional data-erasure action after the plugin is stopped. You can
+also clear History explicitly in the widget before uninstalling.
+
+### Moving from a development installation
+
+Before switching, save any local edits and note your RAMen settings and bar
+placement. Keep a backup of `~/.config/omarchy/shell.json`. Disable RAMen and
+run `omarchy plugin remove boundsj.raman`, then use the install commands above.
+For a symlink, removal unlinks it and leaves the source checkout intact; for a
+Git-managed plugin directory, removal deletes that installed checkout, so
+preserve uncommitted work elsewhere first. History/cache remain separate.
+Reapply only the RAMen settings and placement you want.
+
+Existing development clones from before the clean publication repository was
+created have unrelated Git history. Use a fresh clone; do not merge that old
+history into the new repository or try to force an in-place plugin update.
+
+### Development setup
+
+For an editable checkout, use a symlink only when no plugin is already installed
+at the target path:
+
+```bash
+mkdir -p ~/.config/omarchy/plugins
 ln -s ~/Projects/RAMen ~/.config/omarchy/plugins/boundsj.raman
+omarchy-shell shell rescanPlugins
 omarchy plugin enable boundsj.raman right --after omarchy.tray
 omarchy-shell boundsj.raman toggle     # also: open, close, refresh, status
 ```
@@ -549,8 +629,9 @@ real Omarchy QA. See [History verification](docs/design/history.md),
 H3 captures from the real Omarchy widget at 160% scale, with separate
 [native masters and provenance](docs/media/masters/provenance.json). See the
 [on-device QA report](docs/qa/h3-omarchy-evidence.md) for coverage and limitations.
-Remaining hardware/visual checks and the Storage gallery are consolidated in
-the [final QA runbook](docs/qa/final-qa.md).
+The [verification summary](docs/qa/final-qa-evidence.md) records completed
+native coverage and remaining limits; the [final QA runbook](docs/qa/final-qa.md)
+retains procedures for future checks.
 
 ## Credits / Inspiration
 
