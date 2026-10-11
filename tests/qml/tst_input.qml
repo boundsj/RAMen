@@ -57,6 +57,7 @@ TestCase {
   function test_paste_undo_redo_boundaries_data() {
     return [
       {tag: "append", start: 3, end: 3, paste: "XY", expected: "abcXY"},
+      {tag: "middle", start: 1, end: 1, paste: "XY", expected: "aXYbc"},
       {tag: "replace", start: 1, end: 2, paste: "XY", expected: "aXYc"},
       {tag: "backward-selection", start: 2, end: 1, paste: "XY", expected: "aXYc"},
       {tag: "unicode", start: 1, end: 2, paste: "雪🍜", expected: "a雪🍜c"},
@@ -68,18 +69,30 @@ TestCase {
     field.select(data.start, data.end)
     field.paste(); reply(data.paste)
     compare(field.text, data.expected)
+    var pasteCursor = Math.min(data.start, data.end) + data.paste.length
+    compare(field.cursorPosition, pasteCursor)
     keyClick(Qt.Key_Z, Qt.ControlModifier)
     compare(field.text, "abc", "one Undo restores the entire pre-paste text")
     keyClick(Qt.Key_Z, Qt.ControlModifier | Qt.ShiftModifier)
     compare(field.text, data.expected, "one Redo reapplies the complete paste")
+    compare(field.cursorPosition, pasteCursor, "Redo restores the paste caret")
     keyClick(Qt.Key_D)
-    compare(field.text.length, data.expected.length + 1)
+    compare(field.text, data.expected.slice(0, pasteCursor) + "d" + data.expected.slice(pasteCursor))
     keyClick(Qt.Key_Z, Qt.ControlModifier)
     compare(field.text, data.expected, "typing after paste has its own undo boundary")
     keyClick(Qt.Key_Z, Qt.ControlModifier)
     compare(field.text, "abc")
     keyClick(Qt.Key_Z, Qt.ControlModifier)
     compare(field.text, "", "typing before paste retains its native undo history")
+  }
+  function test_undo_restores_middle_paste_caret() {
+    keyClick(Qt.Key_A); keyClick(Qt.Key_B); keyClick(Qt.Key_C)
+    field.cursorPosition = 1; field.paste(); reply("XY")
+    compare(field.text, "aXYbc"); compare(field.cursorPosition, 3)
+    field.undo()
+    compare(field.text, "abc"); compare(field.cursorPosition, 1)
+    keyClick(Qt.Key_D)
+    compare(field.text, "adbc", "typing after Undo uses the original edit position")
   }
   function test_paste_into_empty_field_and_noop_keep_undo() {
     field.paste(); reply("XY")

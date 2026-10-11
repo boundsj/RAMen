@@ -49,9 +49,9 @@ appropriate source, test, or documentation file. Promote an artifact into
   menu routes Paste through the worker; never add a Controls TextArea default
   clipboard menu. A clipped Flickable keeps the caret visible. Preserve native
   keyboard, selection and IME editing; intercept every Paste gesture before
-  native paste. Bounded paste replaces the plain document through
-  `cursorSelection.text`, then marks `textDocument.modified = false` as an
-  undo checkpoint. Preserve both adjacent typing and atomic paste Undo/Redo;
+  native paste. Bounded paste replaces only the native cursor selection through
+  `cursorSelection.text`, with `textDocument.modified = false` checkpoints on
+  both sides. Preserve the caret, adjacent typing and atomic paste Undo/Redo;
   assigning `text` discards history and separate remove/insert splits paste.
   `InputModel.js` validates whole single-line edits using UTF-16 field limits.
   `InputClipboard.qml` owns one correlated, explicit paste request per runtime;

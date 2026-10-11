@@ -63,28 +63,33 @@ int main(int argc, char **argv) {
                     QCoreApplication::sendEvent(&view, &press);
                     QCoreApplication::sendEvent(&view, &release);
                 };
-                for (bool replacement : {false, true}) {
+                for (int mode : {0, 1, 2}) { // append, middle insertion, replacement
                     field->setProperty("text", "");
                     type(Qt::Key_A, "a"); type(Qt::Key_B, "b"); type(Qt::Key_C, "c");
-                    const int start = replacement ? 1 : 3, end = replacement ? 2 : 3;
+                    const int start = mode == 0 ? 3 : 1, end = mode == 2 ? 2 : start;
                     QMetaObject::invokeMethod(field, "select", Q_ARG(QVariant, start), Q_ARG(QVariant, end));
                     QMetaObject::invokeMethod(field, "paste");
                     QMetaObject::invokeMethod(field, "receivePaste", Q_ARG(QVariant, QVariant::fromValue(field)),
                                               Q_ARG(QVariant, "XY"), Q_ARG(QVariant, ""));
-                    const QString pasted = replacement ? "aXYc" : "abcXY";
+                    const QString pasted = mode == 0 ? "abcXY" : mode == 1 ? "aXYbc" : "aXYc";
                     if (field->property("text").toString() != pasted) { app.exit(10); return; }
                     QMetaObject::invokeMethod(field, "undo");
                     if (field->property("text").toString() != "abc") { app.exit(11); return; }
+                    if (mode != 2 && field->property("cursorPosition").toInt() != start) { app.exit(15); return; }
                     QMetaObject::invokeMethod(field, "redo");
                     if (field->property("text").toString() != pasted) { app.exit(12); return; }
+                    if (field->property("cursorPosition").toInt() != start + 2) { app.exit(16); return; }
                     type(Qt::Key_D, "d");
+                    QString edited = pasted;
+                    edited.insert(start + 2, "d");
+                    if (field->property("text").toString() != edited) { app.exit(17); return; }
                     QMetaObject::invokeMethod(field, "undo");
                     if (field->property("text").toString() != pasted) { app.exit(13); return; }
                     QMetaObject::invokeMethod(field, "undo");
                     QMetaObject::invokeMethod(field, "undo");
                     if (!field->property("text").toString().isEmpty()) { app.exit(14); return; }
                 }
-                std::fprintf(stderr, "PASTE UNDO/REDO OK\n"); std::fflush(stderr);
+                std::fprintf(stderr, "PASTE UNDO/REDO OK — CARET OK\n"); std::fflush(stderr);
             });
         }
         std::fflush(stderr);

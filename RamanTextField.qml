@@ -127,13 +127,12 @@ FocusScope {
     if (error) { inputError = error; return }
     var changed = Input.replace(text, before.start, before.end, value, maximumLength)
     if (!changed) { inputError = "Paste is too long or contains a line break."; return }
-    // Replace the bounded document through its native cursor selection. Qt
-    // groups selection replacement into one undo block, separate from typing;
-    // remove()/insert() split replacements and can merge with earlier typing.
-    // Assigning editor.text would discard the existing undo history instead.
+    // Keep the native edit range/caret in undo history. The document checkpoints
+    // separate this insertion from typing on either side; selection replacement
+    // is already one native undo block. Assigning text would discard history.
     if (changed.text === text) return
-    editor.selectAll()
-    editor.cursorSelection.text = changed.text
+    editor.textDocument.modified = false
+    editor.cursorSelection.text = value
     cursorPosition = changed.cursor
     // Mark a document checkpoint so Qt cannot merge subsequent typing into
     // the final insert in the paste block. No file is loaded or saved here.
