@@ -147,7 +147,7 @@ def connection_limits(db):
 
 
 @contextlib.contextmanager
-def inventory(cache, job_id=None, write=False):
+def inventory(cache, job_id=None, write=False, validate_roots=True):
     if write:
         cache.writer()
     ids = catalog_ids(cache)
@@ -180,12 +180,17 @@ def inventory(cache, job_id=None, write=False):
         meta = json.loads(raw[0])
         if meta['snapshotId'] != job_id or not isinstance(meta['roots'], list) or not 1 <= len(meta['roots']) <= MAX_ROOTS:
             raise S.StorageError('invalid-snapshot', 'invalid Storage job identity')
-        for root in meta['roots']:
-            if S.identity(base64.b64decode(root['pathBytes'], validate=True)) != root['identity']:
-                raise S.StorageError('root-changed', 'a scanned folder changed or was remounted; start a new scan')
+        if validate_roots:
+            check_roots(meta)
         yield db, meta
     finally:
         db.close()
+
+
+def check_roots(meta):
+    for root in meta['roots']:
+        if S.identity(base64.b64decode(root['pathBytes'], validate=True)) != root['identity']:
+            raise S.StorageError('root-changed', 'a scanned folder changed or was remounted; start a new scan')
 
 
 def metadata(db, meta):
@@ -232,6 +237,7 @@ def start(command, cache):
                 device INTEGER, inode INTEGER, ctime INTEGER);
             CREATE UNIQUE INDEX names ON nodes(parent,name);
             CREATE INDEX children ON nodes(parent,known DESC,name,id);
+            CREATE INDEX unfinished ON nodes(parent,complete);
             CREATE TABLE frontier(id INTEGER PRIMARY KEY,cookie INTEGER NOT NULL DEFAULT 0);
             CREATE TABLE links(domain TEXT,device INTEGER,inode INTEGER,PRIMARY KEY(domain,device,inode)) WITHOUT ROWID;
             CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
@@ -478,10 +484,18 @@ def step(command, cache, limits=None):
             db.rollback()
             if exc.code != 'node-changed':
                 raise
-            # Never seek an old directory cookie through a modified namespace.
-            # Earlier committed rows survive, but this frontier needs a rescan.
+            # Never seek an old cookie through a modified namespace. Retain
+            # earlier rows as a lower bound and continue other known folders,
+            # so a busy log/cache directory cannot derail Main storage.
             meta = json.loads(db.execute("SELECT value FROM metadata WHERE key='job'").fetchone()[0])
-            meta.update(status='paused', pauseReason=exc.code)
+            if db.execute('SELECT 1 FROM frontier WHERE id=?', (node_id,)).fetchone():
+                finish(db, node_id, 'changed-directory')
+                meta['changed'] += 1
+                meta.update(status='scanning' if db.execute('SELECT 1 FROM frontier LIMIT 1').fetchone() else 'ready', pauseReason='')
+            else:
+                # This folder was first discovered inside the rolled-back
+                # slice. A fresh scan is needed to resolve its parent safely.
+                meta.update(status='paused', pauseReason=exc.code)
             save_metadata(db, meta)
             db.commit()
         except sqlite3.Error as exc:
@@ -507,20 +521,32 @@ def cached(command, cache):
         return dict(status='unscanned', snapshot=None)
     scope = S.unpack_path(command.get('path')) if command.get('path') else None
     for job_id in [command['jobId']] if command.get('jobId') else ids:
-        with inventory(cache, job_id) as (db, meta):
+        with inventory(cache, job_id, validate_roots=scope is None) as (db, meta):
             if scope and (base64.b64decode(meta['scopeBytes']) != scope or meta['kind'] != command.get('kind', 'folder')):
                 continue
+            if scope is not None:
+                check_roots(meta)
             return dict(status=meta['status'], snapshot=metadata(db, meta))
     return dict(status='unscanned', snapshot=None)
 
 
 def row(db, node, meta):
+    root = next((r for r in meta['roots'] if r['node'] == node['root']), None)
+    representable = root is not None
+    if root is not None:
+        try:
+            base64.b64decode(root['pathBytes'], validate=True).decode('utf-8', 'strict')
+            for ancestor in chain(db, node['id']):
+                if ancestor['root'] and ancestor['id'] != root['node']:
+                    ancestor['name'].decode('utf-8', 'strict')
+        except UnicodeError:
+            representable = False
     return dict(nodeId=nid(node['id']), parentId=nid(node['parent']), name=S.display(node['name']),
                 kind=KINDS[node['kind']], ownAllocatedBytes=node['own'], apparentBytes=node['apparent'],
                 knownAllocatedBytes=node['known'], allocatedBytes=node['known'] if node['complete'] else None,
                 coverage='complete' if node['complete'] else 'partial', pending=not node['done'],
                 reason=node['reason'], sharedLink=bool(node['shared']), hidden=node['name'].startswith(b'.'),
-                actionIdentity=bool(node['root']) and not node['reason'], copyRepresentable=True)
+                actionIdentity=bool(node['root']) and not node['reason'], copyRepresentable=representable)
 
 
 def children(command, cache):
@@ -540,8 +566,13 @@ def children(command, cache):
         order = ' ORDER BY known DESC,name,id LIMIT ? OFFSET ?'
         rows = [row(db, r, meta) for r in db.execute('SELECT * FROM nodes WHERE ' + where + order, args + (limit, offset))]
         segments = [row(db, r, meta) for r in db.execute('SELECT * FROM nodes WHERE ' + where + order, args + (S.MAX_SEGMENTS - 1, 0))]
+        members = command.get('memberIds', [])
+        if not isinstance(members, list) or len(members) > S.MAX_ROWS:
+            raise S.StorageError('bad-request', 'memberIds must contain at most 50 stored IDs')
+        members = [number(i) for i in members]
+        member_rows = [row(db, r, meta) for r in db.execute('SELECT * FROM nodes WHERE parent=? AND id IN (%s)' % ','.join('?' for _ in members), (node_id, *members))] if members else []
         result = dict(snapshotId=meta['snapshotId'], nodeId=nid(node_id), node=row(db, node, meta),
-                      snapshot=metadata(db, meta), rows=rows, segments=segments, units='bytes',
+                      snapshot=metadata(db, meta), rows=rows, segments=segments, members=member_rows, units='bytes',
                       offset=offset, total=count, nextOffset=offset + len(rows) if offset + len(rows) < count else None,
                       filter=text, childrenKnownAllocatedBytes=total, activationDurability='durable',
                       breadcrumbs=[dict(nodeId=nid(r['id']), name=S.display(r['name'])) for r in chain(db, node_id)])
@@ -563,6 +594,8 @@ def children(command, cache):
                     result['segments'].pop()
                 elif len(result['rows']) > 1:
                     result['rows'].pop()
+                elif result['members']:
+                    result['members'].pop()
                 else:
                     raise
 

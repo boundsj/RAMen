@@ -88,10 +88,24 @@ class JobTests(unittest.TestCase):
             (self.scope / str(i)).write_text('x')
         self.start(); first = self.step()
         (self.scope / 'new').write_text('new')
-        paused = self.step()
-        self.assertEqual(paused['pauseReason'], 'node-changed')
+        changed = self.step()
+        self.assertEqual(changed['status'], 'ready')
+        self.assertEqual(changed['coverage'], 'partial')
+        self.assertEqual(changed['changed'], 1)
         saved = J.cached(dict(jobId=self.job_id), self.cache)['snapshot']
         self.assertEqual(saved['entries'], first['entries'])
+
+    def test_changed_directory_does_not_block_other_known_folders(self):
+        first = self.scope / 'a'; first.mkdir()
+        second = self.scope / 'b'; second.mkdir()
+        (second / 'file').write_text('x')
+        self.start(); self.step(2)
+        (first / 'new').touch()
+        result = self.ready()
+        self.assertEqual(result['coverage'], 'partial')
+        rows = J.children(dict(jobId=self.job_id), self.cache)['rows']
+        self.assertEqual(next(r for r in rows if r['name'] == 'a')['reason'], 'changed-directory')
+        self.assertEqual(next(r for r in rows if r['name'] == 'b')['coverage'], 'complete')
 
     def test_rescan_retains_previous_job_and_replaces_only_third(self):
         first = self.start()['snapshotId']; self.ready()
@@ -168,6 +182,46 @@ class JobTests(unittest.TestCase):
         other = self.base / 'other'; other.mkdir()
         J.start(dict(path=str(other)), self.cache)
         self.assertEqual(J.cached(dict(path=str(self.scope)), self.cache)['snapshot']['snapshotId'], first)
+        other.rmdir()
+        self.assertEqual(J.cached(dict(path=str(self.scope)), self.cache)['snapshot']['snapshotId'], first)
+
+    def test_clipboard_capability_includes_byte_path_ancestors(self):
+        raw = os.fsencode(self.scope) + b'/raw-\xff'
+        os.mkdir(raw)
+        fd = os.open(raw + b'/ascii', os.O_WRONLY | os.O_CREAT, 0o600)
+        os.close(fd)
+        self.start(); self.ready()
+        directory = J.children(dict(jobId=self.job_id), self.cache)['rows'][0]
+        self.assertFalse(directory['copyRepresentable'])
+        child = J.children(dict(jobId=self.job_id, nodeId=directory['nodeId']), self.cache)['rows'][0]
+        self.assertFalse(child['copyRepresentable'])
+
+    def test_populated_sibling_completion_uses_indexed_pending_lookup(self):
+        for i in range(100):
+            folder = self.scope / str(i); folder.mkdir()
+            (folder / 'allocated').write_bytes(b'x'*4096)
+        self.start(); complete = self.ready()
+        self.assertEqual(complete['coverage'], 'complete')
+        with J.inventory(self.cache, self.job_id) as (db, _):
+            plan = db.execute('EXPLAIN QUERY PLAN SELECT 1 FROM nodes WHERE parent=1 AND complete=0').fetchall()
+        self.assertTrue(any('unfinished' in str(tuple(row)) for row in plan))
+
+    def test_retained_member_queries_use_current_sizes_and_parent_scope(self):
+        for i in range(65):
+            (self.scope / str(i)).touch()
+        (self.scope / 'subfolder').mkdir()
+        (self.scope / 'subfolder' / 'private-member').touch()
+        self.start(); self.ready()
+        first = J.children(dict(jobId=self.job_id), self.cache)
+        tail = J.children(dict(jobId=self.job_id, offset=60), self.cache)['rows']
+        chosen = tail[0]['nodeId']
+        result = J.children(dict(jobId=self.job_id, memberIds=[chosen]), self.cache)
+        self.assertEqual(result['members'][0]['nodeId'], chosen)
+        folder = next(r for r in first['rows'] if r['name'] == 'subfolder')
+        nested = J.children(dict(jobId=self.job_id, nodeId=folder['nodeId']), self.cache)['rows'][0]
+        self.assertEqual(J.children(dict(jobId=self.job_id, memberIds=[nested['nodeId']]), self.cache)['members'], [])
+        with self.assertRaises(S.StorageError):
+            J.children(dict(jobId=self.job_id, memberIds=[chosen]*51), self.cache)
 
     def test_cache_symlink_sidecar_is_rejected(self):
         self.start()
