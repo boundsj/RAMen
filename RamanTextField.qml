@@ -179,6 +179,7 @@ FocusScope {
     id: contextMenu
     objectName: "boundedInputMenu"
     popupType: Popup.Item
+    implicitWidth: Math.max(180, fontMetrics.averageCharacterWidth * 12 + 24)
     font: field.font
     palette.base: field.menuSurface
     palette.window: field.menuSurface

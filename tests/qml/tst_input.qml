@@ -87,6 +87,7 @@ TestCase {
     var menu = findChild(field, "boundedInputMenu")
     tryVerify(function() { return menu.opened })
     verify(field.inputOwned, "the menu keeps page shortcuts away from the field")
+    verify(menu.width >= 100 && menu.height >= 100, "menu actions have visible hit targets")
     compare(menu.palette.window, field.menuSurface)
     compare(menu.palette.text, field.color)
     var paste = findChild(field, "boundedPasteAction")
