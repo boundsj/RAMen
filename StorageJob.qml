@@ -9,6 +9,7 @@ Item {
   property var runtime: null
   property var session: null
   property var scope: null
+  property var requestedScope: null
   property var snapshot: null
   property bool running: false
   property bool inFlight: false
@@ -29,13 +30,17 @@ Item {
   }
   function start(value) {
     if (running || inFlight) return false
-    scope = value; error = ""; running = true
-    if (!send("storage.start", value, "start")) { running = false; return false }
+    requestedScope = value; error = ""; running = true
+    if (!send("storage.start", value, "start")) {
+      running = false; error = "storage-unavailable: helper not ready or request too large"
+      updated(null, requestedScope); requestedScope = null
+      return false
+    }
     return true
   }
-  function resume(value) {
+  function resume(value, valueScope) {
     if (running || inFlight || !value || !value.job || value.pauseReason) return false
-    snapshot = value; running = true; error = ""
+    snapshot = value; scope = valueScope || SM.scopeFrom(value); running = true; error = ""
     nextStep()
     return true
   }
@@ -45,7 +50,10 @@ Item {
   }
   function nextStep() {
     if (running && !inFlight && snapshot) {
-      if (!send("storage.step", { jobId: snapshot.snapshotId }, "step")) running = false
+      if (!send("storage.step", { jobId: snapshot.snapshotId }, "step")) {
+        running = false; error = "storage-unavailable: helper not ready"
+        updated(snapshot, scope)
+      }
     }
   }
   function accept(message) {
@@ -56,10 +64,15 @@ Item {
     inFlight = false
     if (message.type === "error") {
       running = false; error = message.code + ": " + message.message
-      updated(snapshot, scope)
+      updated(result.entry.purpose === "start" ? null : snapshot, result.entry.purpose === "start" ? requestedScope : scope)
+      requestedScope = null
       return
     }
-    if (message.snapshot) snapshot = message.snapshot
+    if (message.snapshot) {
+      snapshot = message.snapshot
+      scope = result.entry.purpose === "start" ? requestedScope : scope || SM.scopeFrom(snapshot)
+      requestedScope = null
+    }
     if (snapshot && (snapshot.status === "ready" || snapshot.pauseReason)) running = false
     updated(snapshot, scope)
     if (running) Qt.callLater(root.nextStep)

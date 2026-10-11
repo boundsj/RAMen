@@ -278,6 +278,7 @@ Item {
     if (!entriesReady) return
     if (memberSource) listing = memberSource
     clearMemberView(); syncSelection(selectedId)
+    if (snapshot && snapshot.job) query(listing.nodeId, 0)
   }
   function showTiny() {
     if (!entriesReady) return
@@ -329,6 +330,7 @@ Item {
       listing = memberSource; memberTail = false
       tinyOffset = Math.floor((tinyMembers.length - 1) / 50) * 50
       syncSelection("")
+      if (snapshot && snapshot.job) query(listing.nodeId, 0)
     } else tinyOffset = Math.max(0, tinyOffset - 50)
   }
   function pendingPurpose(purpose) {
@@ -347,6 +349,8 @@ Item {
     if (nodeId) args.nodeId = nodeId
     if (purpose === "band") args.level = depth || 1
     if (snapshot.job) { args.jobId = args.snapshotId; delete args.snapshotId }
+    if (snapshot.job && purpose !== "band" && memberSource && memberSource.nodeId === nodeId && !memberTail)
+      args.memberIds = tinyMembers.slice(tinyOffset, tinyOffset + 50)
     send(snapshot.job ? "storage.job.children" : "storage.children", args, purpose || "ledger", selection)
   }
   function selectMap(segment) {
@@ -449,6 +453,7 @@ Item {
         }
       }
       if (purpose !== "locations" && purpose !== "browse" && purpose !== "mounts" && failure.invalidates) invalidateScope(message.code)
+      else if (purpose === "ledger") drainRefresh()
       return
     }
     if (message.type === "storage-progress") {
@@ -477,7 +482,8 @@ Item {
       }
     } else if (message.type === "storage-result") {
       if (purpose === "jobcache") {
-        if (!message.snapshot) { send("storage.cached", scope, "cached"); return }
+        if (!message.snapshot && scope.kind !== "main") { send("storage.cached", scope, "cached"); return }
+        if (!message.snapshot) { phase = "unscanned"; status = "Ready to explore main storage · choose Scan"; return }
         showJob(message.snapshot)
         return
       }
@@ -517,6 +523,7 @@ Item {
       }
     } else if (message.type === "storage-children") {
       if (purpose === "band") {
+        if (snapshot && snapshot.job && message.snapshot && message.snapshot.updatedAt < snapshot.updatedAt) return
         var next = Object.assign({}, loaded); next[message.nodeId] = message; loaded = next
         if (owner.storageShowMap && result.entry.args.level === 1) {
           var child = message.segments.filter(function(r) { return r.kind === "directory" })[0]
@@ -525,19 +532,38 @@ Item {
       }
       else {
         if (snapshot && snapshot.job && message.snapshot && message.snapshot.updatedAt >= snapshot.updatedAt) snapshot = message.snapshot
+        if (snapshot && snapshot.job && memberSource && !memberTail && memberSource.nodeId === message.nodeId) {
+          var members = {}, fresh = []
+          var sources = (message.members || []).concat(message.rows || [], message.segments || [])
+          for (var m = 0; m < sources.length; m++) if (!members[sources[m].nodeId]) { members[sources[m].nodeId] = true; fresh.push(sources[m]) }
+          memberSource = Object.assign({}, message, { segments: fresh })
+        }
         listing = message; syncSelection(result.entry.selection || selectedId)
         crumbs = message.breadcrumbs || [{ nodeId: message.nodeId, name: message.node.name }]
         var dirs = message.segments.filter(function(r) { return r.kind === "directory" }).slice(0, 3)
         if (owner.storageShowMap && !filter) for (var i = 0; i < dirs.length; i++) query(dirs[i].nodeId, 0, "band")
-        if (refreshQueued && snapshot && snapshot.job) {
-          refreshQueued = false
-          Qt.callLater(function() { if (root.snapshot && root.snapshot.job && root.listing && !root.queryPending) root.query(root.listing.nodeId, root.listing.offset, "ledger", 0, root.selectedId) })
-        }
+        drainRefresh()
       }
     } else if (message.type === "storage-action") {
       if (message.action === "copy") status = "Path copied"
       else status = "Directory handed to file manager"
     }
+  }
+  function drainRefresh() {
+    if (!refreshQueued || !snapshot || !snapshot.job) return
+    refreshQueued = false
+    Qt.callLater(function() {
+      if (root.snapshot && root.snapshot.job && !root.queryPending)
+        root.query(root.listing ? root.listing.nodeId : root.snapshot.rootNodeId, root.listing ? root.listing.offset : 0, "ledger", 0, root.selectedId)
+    })
+  }
+  function retireInventoryRequests() {
+    var pending = {}
+    for (var id in session.pending) {
+      var purpose = session.pending[id].purpose
+      if (["capacity", "browse", "mounts", "locations"].indexOf(purpose) >= 0) pending[id] = session.pending[id]
+    }
+    session = Object.assign({}, session, { pending: pending }); persist()
   }
   function showJob(value) {
     var changed = !snapshot || snapshot.snapshotId !== value.snapshotId
@@ -548,18 +574,21 @@ Item {
       : phase === "paused" ? "Progress saved · " + value.entries + " entries · continue whenever you like"
       : "Scan ready" + (value.coverage === "partial" ? " · some ingredients could not be measured" : "")
     if (value.pauseReason) status = value.pauseReason === "node-changed" ? "Progress saved · a folder changed; rescan for a fresh view" : "Progress saved · scan budget reached; explore a smaller folder"
-    if (changed) { resetNavigation(); listing = null }
+    if (changed) { retireInventoryRequests(); resetNavigation(); listing = null }
+    loaded = ({})
     refreshQueued = queryPending
     if (!refreshQueued) query(listing ? listing.nodeId : value.rootNodeId, listing ? listing.offset : 0, "ledger", 0, selectedId)
   }
   Connections {
     target: root.job
     function onUpdated(value, jobScope) {
-      if (!value) return
-      if ((root.snapshot && root.snapshot.snapshotId === value.snapshotId)
-          || (jobScope && JSON.stringify(jobScope) === JSON.stringify(root.scope))) {
-        root.showJob(value)
-        if (root.job.error) { root.error = root.job.error; root.status = "Progress saved · couldn’t continue; see technical details" }
+      if ((value && root.snapshot && root.snapshot.snapshotId === value.snapshotId) || SM.sameScope(jobScope, root.scope)) {
+        if (value) root.showJob(value)
+        if (root.job.error) {
+          var failure = SM.failure(root.job.error.split(":")[0])
+          root.error = root.job.error; root.phase = failure.state
+          root.status = (root.snapshot ? "Saved results · " : "Couldn’t start scan · ") + failure.text
+        }
       }
     }
   }
@@ -734,7 +763,7 @@ Item {
         width: parent.width; spacing: Style.space(6)
         StorageButton { text: root.snapshot ? "Rescan" : root.scope.kind === "main" ? "Scan main storage" : "Scan this folder"; primary: !root.snapshot; enabled: root.entriesReady && !root.jobBusy; onClicked: root.scan() }
         StorageButton { text: root.jobRunning ? "Pause & keep results" : "Cancel"; visible: root.scanning || root.jobRunning; enabled: root.jobRunning || (root.scanning && !!root.scanId && !root.reconciling); onClicked: root.cancel() }
-        StorageButton { text: "Continue scan"; primary: true; visible: !!root.snapshot && !!root.snapshot.job && root.snapshot.status !== "ready" && !root.jobRunning; enabled: !!root.snapshot && !root.jobBusy && !root.snapshot.pauseReason; onClicked: root.job.resume(root.snapshot) }
+        StorageButton { text: "Continue scan"; primary: true; visible: !!root.snapshot && !!root.snapshot.job && root.snapshot.status !== "ready" && !root.jobRunning; enabled: !!root.snapshot && !root.jobBusy && !root.snapshot.pauseReason; onClicked: root.job.resume(root.snapshot, root.scope) }
         StorageButton { text: "Reload cache"; visible: !!root.snapshot || root.phase === "helper-failed" || root.phase === "cache-invalid"; enabled: root.helperAvailable && !root.scanning && !root.reconciling; onClicked: root.reloadCache() }
         StorageButton { text: "Up"; visible: !!root.listing && !!root.listing.node.parentId; enabled: root.entriesReady && !!root.listing && !!root.listing.node.parentId; onClicked: root.up() }
       }

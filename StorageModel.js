@@ -18,6 +18,26 @@ function sameIdentity(a, b) {
   var keys = Object.keys(a)
   return keys.length === Object.keys(b).length && keys.every(function(k) { return a[k] === b[k] })
 }
+function scopeFrom(snapshot) {
+  return snapshot.scopeBytes ? { pathBytes: snapshot.scopeBytes, kind: snapshot.kind || "folder" }
+    : { path: snapshot.scope, kind: snapshot.kind || "folder" }
+}
+function scopeKey(scope) {
+  if (!scope) return ""
+  var path = scope.pathBytes
+  if (!path && scope.path) {
+    var raw = unescape(encodeURIComponent(scope.path)), alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    path = ""
+    for (var i = 0; i < raw.length; i += 3) {
+      var a = raw.charCodeAt(i), b = raw.charCodeAt(i + 1), c = raw.charCodeAt(i + 2)
+      path += alphabet[a >> 2] + alphabet[((a & 3) << 4) | (isNaN(b) ? 0 : b >> 4)]
+        + (isNaN(b) ? "=" : alphabet[((b & 15) << 2) | (isNaN(c) ? 0 : c >> 6)])
+        + (isNaN(c) ? "=" : alphabet[c & 63])
+    }
+  }
+  return (scope.kind || "folder") + ":" + path
+}
+function sameScope(a, b) { return !!a && !!b && scopeKey(a) === scopeKey(b) }
 function failure(code) {
   if (code === "invalid-path")
     return { state: "invalid-path", invalidates: true, text: "Invalid scope — choose an absolute directory path" }
