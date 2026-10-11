@@ -178,13 +178,21 @@ FocusScope {
   Menu {
     id: contextMenu
     objectName: "boundedInputMenu"
+    popupType: Popup.Item
     font: field.font
+    palette.base: field.menuSurface
     palette.window: field.menuSurface
     palette.text: field.color
     palette.windowText: field.color
     palette.buttonText: field.color
     palette.highlightedText: field.color
     palette.highlight: Qt.rgba(field.color.r, field.color.g, field.color.b, 0.12)
+    background: Rectangle {
+      color: field.menuSurface
+      border.color: Qt.rgba(field.color.r, field.color.g, field.color.b, 0.25)
+      border.width: 1
+      radius: 4
+    }
     // Close synchronously before restoring editor focus for an async paste.
     enter: Transition {}
     exit: Transition {}
