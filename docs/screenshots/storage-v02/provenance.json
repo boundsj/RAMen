@@ -1,0 +1,93 @@
+{
+  "capturedDate": "2026-10-11",
+  "runtimeCommit": "a26b5cb34108e3ae83f1dba9d816d56397eb18d3",
+  "manifestVersion": "0.2.0",
+  "environment": {
+    "tryOmarchy": "0.5.1",
+    "omarchyRuntime": "4.0.4-1",
+    "kernel": "7.2.8-1-aarch64-ARCH",
+    "quickshell": "0.3.1",
+    "qt": "6.11.2",
+    "filesystem": "ext4",
+    "theme": "Tokyo Night",
+    "displayScale": 2
+  },
+  "method": "Native Wayland grim master; lossless sips panel crop only; no scaling or retouching",
+  "images": [
+    {
+      "file": "welcome.png",
+      "sha256": "92ec1f27caa03b52b071d9eb8d13ecfe3b7d58b81b96483f10c6b4bed27ae83d",
+      "width": 840,
+      "height": 1398,
+      "masterSha256": "afa7a19f5bebfb1d04d55a6cb6b59da7883dd05a41c688eaf56292cfca0678ab",
+      "masterWidth": 3840,
+      "masterHeight": 2160,
+      "crop": {
+        "x": 2990,
+        "y": 62,
+        "width": 840,
+        "height": 1398
+      }
+    },
+    {
+      "file": "main-welcome.png",
+      "sha256": "e5eacf7ed28560a948f184b9086f274e4e4eb6442a20e23182efd95738090414",
+      "width": 840,
+      "height": 958,
+      "masterSha256": "6ebbff3b10c42b7739a6afe970335b0bd464a84a1a8154a97d5513ef111d99cd",
+      "masterWidth": 3840,
+      "masterHeight": 2160,
+      "crop": {
+        "x": 2990,
+        "y": 62,
+        "width": 840,
+        "height": 958
+      }
+    },
+    {
+      "file": "ready.png",
+      "sha256": "f0f8c92e86896f656e0a7941368467d0672641b38710894d57ab8625b0b69c0e",
+      "width": 840,
+      "height": 1872,
+      "masterSha256": "e3c296feba639f9b53ef1579d9cfcdbad2c12789b986432f36f6d353c8b995cc",
+      "masterWidth": 3840,
+      "masterHeight": 2160,
+      "crop": {
+        "x": 2990,
+        "y": 62,
+        "width": 840,
+        "height": 1872
+      }
+    },
+    {
+      "file": "paused.png",
+      "sha256": "cc4cce40968161d3ad12988de6a81517d0b3f6dc9640599db7c52ac09e648bdc",
+      "width": 840,
+      "height": 1836,
+      "masterSha256": "0865e567a69f0d7f058cc0ddc3f0b1a6df24a965713731a7af436c22c0b18ce6",
+      "masterWidth": 3840,
+      "masterHeight": 2160,
+      "crop": {
+        "x": 2990,
+        "y": 62,
+        "width": 840,
+        "height": 1836
+      }
+    },
+    {
+      "file": "main-storage.png",
+      "sha256": "b4ba3eb09301b730683e0afe3ebc63b9f81450a2aed06e5d0615ba61f7d97fb5",
+      "width": 840,
+      "height": 2056,
+      "masterSha256": "69c9498db30a4ec7de315935e65af5e15a58de5e0ce6d27abb1ead1a091d5edc",
+      "masterWidth": 3840,
+      "masterHeight": 2160,
+      "crop": {
+        "x": 2990,
+        "y": 62,
+        "width": 840,
+        "height": 2056
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ TestCase {
   width: 800; height: 900
   Window { id: shotWindow; width: 420; height: 900; visible: true; color: Color.popups.background }
   Component { id: runtimeComponent; RamanRuntime { ipcEnabled: false } }
-  Component { id: viewComponent; StorageView { width: 400; maxHeight: 750 } }
+  Component { id: viewComponent; StorageView { progressive: false; width: 400; maxHeight: 750 } }
   Component {
     id: panelComponent
     QtObject {
@@ -102,6 +102,17 @@ TestCase {
       {tag:"time-limit",code:"scan-time-limit",phase:"limited",invalid:false},
       {tag:"helper",code:"worker-failed",phase:"helper-failed",invalid:false}
     ]
+  }
+  function test_action_error_is_visible_without_expanding_details() {
+    var v=setup().view; seed(v)
+    v.status="Path copied"; v.action("copy")
+    reply(v,"action",{type:"error",code:"node-changed",message:"Changed entry"})
+    verify(v.status.indexOf("Couldn’t copy")>=0); verify(!v.showDetails)
+  }
+  function test_failed_early_scan_restarts_directory_discovery() {
+    var v=setup().view; v.scan()
+    reply(v,"scan",{type:"error",code:"scan-entry-limit",message:"Large tree"})
+    verify(pending(v,"browse")!=="")
   }
   function test_failure_states(data) {
     var v=setup().view; seed(v); v.scan()

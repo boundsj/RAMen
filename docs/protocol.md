@@ -418,7 +418,102 @@ future Apps ownership/cancellation/state-cache requirements.
 
 ## Storage backend
 
-These are the commands behind the Storage page, delivered in S1 (backend), S2
+### Progressive inventories (0.2)
+
+The current page uses a shared `StorageJob.qml` driver for an explicitly started
+job, independent of each popup's query client. Opening Storage only discovers
+capacity, candidate folders and saved inventories; it does not recurse.
+Demo mode never redirects Storage requests to fake paths.
+
+Requests use the existing newline JSON command envelope, printable `clientId`,
+monotonically increasing `generation` and unique `requestId`. Commands are at
+most 4096 encoded bytes, replies at most 128 KiB. `path` or base64 `pathBytes`
+names an absolute byte path; labels are never used for actions. Example IDs
+below are placeholders for backend-issued 32-character lowercase hex IDs.
+
+```json
+{"command":"storage.browse","requestId":"b1","clientId":"view-1","generation":1,"path":"/home/example","offset":0,"limit":8}
+{"command":"storage.locations","requestId":"l1","clientId":"view-1","generation":1}
+{"command":"storage.job","requestId":"j1","clientId":"view-1","generation":1,"path":"/home/example","kind":"folder"}
+{"command":"storage.start","requestId":"s1","clientId":"job-1","generation":1,"path":"/home/example","kind":"folder"}
+{"command":"storage.step","requestId":"s2","clientId":"job-1","generation":1,"jobId":"32-character-job-id"}
+{"command":"storage.pause","requestId":"s3","clientId":"job-1","generation":1,"jobId":"32-character-job-id"}
+{"command":"storage.job.children","requestId":"c1","clientId":"view-1","generation":1,"jobId":"32-character-job-id","nodeId":"32-character-node-id","offset":0,"limit":50,"filter":"","memberIds":[]}
+{"command":"storage.job.action","requestId":"a1","clientId":"view-1","generation":1,"jobId":"32-character-job-id","nodeId":"32-character-node-id","action":"copy"}
+```
+
+- `storage.browse` lists immediate directory names without recursively measuring
+  them. Hidden folders are included; symlinks are not followed. Offset paging
+  returns `nextOffset` and validated `parentPathBytes`. The page asks for eight
+  folders; the protocol allows at most 50.
+- `storage.locations` returns the **Main storage** plan: mounted roots on Home's
+  supported local filesystem, one capacity reading, and skipped mounted
+  snapshots. Supported Btrfs roots use filesystem UUID, mount source and
+  subvolume identity; bind aliases are deduplicated. Other drives, network and
+  pseudo filesystems are excluded. At most 24 eligible roots are accepted.
+- `storage.start` creates a new private inventory; `kind: "main"` resolves the
+  plan from the supplied Home path, while `kind: "folder"` measures that folder
+  without traversing nested mounts. It does not complete the whole walk.
+- `storage.step` performs at most 5000 entries or roughly 1.5 seconds of work
+  and commits measured nodes, ancestor totals and directory cookies together.
+  A single slow filesystem call can exceed that interval. The shared runtime
+  schedules another step only while an explicitly started job remains running.
+- `storage.pause` records paused state. The UI stops scheduling immediately
+  and lets an already-running step commit before pausing. Closing the popup
+  retires its query client with `storage.leave`, without cancelling the separate
+  job client. Helper exit kills owned workers; an uncommitted slice rolls back.
+- `storage.job` returns a saved inventory, optionally by `jobId` or exact
+  path/kind. Without either it restores the latest metadata. Restore never
+  schedules a scan. Root identity must still match before reuse or continuation.
+- `storage.job.children` returns a consistent checkpoint's size-sorted ledger,
+  bands, breadcrumbs and optional current `members`. `memberIds` accepts at
+  most 50 node IDs and returns only members directly under the queried parent;
+  this refreshes visible Other members even when they are outside the current
+  ledger page. Filters are literal case-folded substrings of at most 128
+  printable characters. Rows are capped at 50 and segments at 59, and are
+  trimmed further to keep the complete reply envelope within 128 KiB.
+- `storage.job.action` supports `open` and `copy` only. The worker reopens every
+  component without following symlinks and validates stored identities and
+  ancestor change times. Open hands a directory FD to the desktop portal (a
+  file opens its parent); Copy requires an exactly representable UTF-8 path.
+  Virtual roots and unsafe/unmeasured entries cannot be acted on. No file is
+  executed or deleted. Failed clipboard helpers and descendants are reaped.
+
+`storage-result` carries `snapshot.job: true`, `snapshotId`, `rootNodeId`,
+`scopeBytes`, `kind`, `status` (`scanning`, `paused` or `ready`), `pauseReason`,
+`entries`, `pendingFolders`, `knownAllocatedBytes`, coverage and skipped/error
+counts. Node IDs encode stored integers and are stable **within that inventory**;
+a rescan creates new IDs. `storage-children` includes its checkpoint metadata.
+Rows distinguish `pending` (still exploring) from partial coverage. An
+unfinished total has `allocatedBytes: null` and a known lower bound; zero must
+never substitute for unmeasured content. Shares use the parent's known total
+and disclose partial coverage. Capacity is a separate filesystem measure.
+
+A directory changed since its saved cookie is not resumed from that cookie.
+Committed results remain, that directory is marked partial, and other known
+frontiers continue. A change to a newly discovered directory within an
+uncommitted slice can instead pause the job with `node-changed`. A replaced
+scope, reboot or changed mount identity requires a fresh scan. Entry/cache
+limits pause with committed progress rather than discarding it.
+
+Two recent inventories are retained, each capped at 240 MiB of database
+metadata and 10 million entries, with directory depth capped at 128. Journals
+use additional temporary space. The private cache uses validated owned files,
+no-follow paths and a single writer lease; publication precedes eviction, and
+the next writer removes interrupted job artifacts. Every write connection
+reapplies its SQLite page budget. The scanner requires 64-bit Linux 6.8+ and
+supported strong filesystem identities. It reads metadata only, not contents.
+
+Views accept only outstanding matching IDs/generations, pair each checkpoint
+with its actual scope, retire queries when adopting another inventory, and
+refresh final results even if an older query fails. The live and automated
+checks, benchmark conditions and hardware limits are recorded in
+[Storage 0.2 verification](qa/storage-v02.md).
+
+### Legacy snapshots (0.1 compatibility)
+
+The commands below remain supported for existing clients and snapshots. They
+were delivered in S1 (backend), S2
 (page, scope bytes and path actions) and S3 (UI failure and recovery states;
 the wire contract did not change in S3). The page compares selected-capacity
 `identity` against displayed snapshot `identity` as well as relying on backend
@@ -432,7 +527,7 @@ remaining hardware checks are in [final QA](qa/final-qa.md).
 
 These requests are separate from `omarchy-shell` methods. No storage
 job is launched at probe startup, by Memory/History, or by ordinary `refresh`.
-Only explicit `storage.scan` recurses. Demo mode does not redirect storage
+Only explicit `storage.scan` recurses in this legacy API. Demo mode does not redirect storage
 requests to fake paths: test clients must use their own directories/cache.
 
 ```json

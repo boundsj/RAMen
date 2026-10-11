@@ -248,6 +248,8 @@ Item {
   // The History window last chosen in this session (any panel).
   property string historyWindow: "1h"
   property var storageScope: null
+  readonly property alias storageJob: storageJob
+  StorageJob { id: storageJob; runtime: root }
   // memory | cpu | gpu-memory; AppsModel.defaultSort makes an unavailable one fall back visibly.
   readonly property string appsDefaultSort: String(setting("appsDefaultSort", "memory"))
   // off | auto: auto samples GPU clients only while an Apps page is visible.

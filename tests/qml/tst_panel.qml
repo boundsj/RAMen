@@ -102,10 +102,11 @@ TestCase {
     tryVerify(function() { return !!s.panel.storageView })
     var view = s.panel.storageView
     var commands = written(s.rt).filter(function(l) { return l.indexOf("{") === 0 }).map(function(l) { return JSON.parse(l) })
-    verify(commands.some(function(c) { return c.command === "storage.cached" }))
+    verify(commands.some(function(c) { return c.command === "storage.job" }))
     verify(!commands.some(function(c) { return c.command === "storage.scan" }))
     for (var key of ["delete", "force", "enter", "cancel", "open", "copy"]) s.panel.handleKey(key)
     compare(kills(s.rt).length, 0)
+    view.choosingFolder = true
     var field = findChild(view, "storagePathInput")
     field.forceActiveFocus()
     verify(field.activeFocus, "field has focus")
@@ -143,6 +144,13 @@ TestCase {
   function storageReply(view,purpose,fields) {
     var id=""
     for(var key in view.session.pending) if(view.session.pending[key].purpose===purpose) id=key
+    if (!id && purpose === "cached") {
+      for (var request in view.session.pending) if (view.session.pending[request].purpose === "jobcache") {
+        view.accept({requestId:request,clientId:view.session.clientId,generation:view.session.generation,type:"storage-result",status:"unscanned",snapshot:null})
+        break
+      }
+      for (var legacy in view.session.pending) if (view.session.pending[legacy].purpose === "cached") id=legacy
+    }
     verify(!!id,purpose+" outstanding")
     view.accept(Object.assign({requestId:id,clientId:view.session.clientId,generation:view.session.generation},fields))
   }
@@ -181,6 +189,7 @@ TestCase {
       if(!data.editor) wait(20)
     }
     if(data.editor) {
+      if(data.editor==="storagePathInput") { v.choosingFolder=true; wait(0) }
       var field=findChild(v,data.editor)
       mouseClick(field,field.width/2,field.height/2)
       verify(field.activeFocus); field.text="synthetic"; field.cursorPosition=5

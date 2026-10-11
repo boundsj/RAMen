@@ -1,6 +1,51 @@
 # Storage design and verification
 
-Storage is RAMen's third panel page. It was delivered in three merged
+## Current experience (0.2)
+
+Storage starts at **My files**, with filesystem free space and a short list of
+folders available immediately. Names-only discovery makes it possible to
+choose a useful folder before doing a recursive scan. **Choose a folder…**
+reveals the path field; **Main storage** is an explicit larger scan of the
+mounted roots sharing Home's filesystem, rather than an unexplained `/` default.
+Supported Btrfs Home/System subvolumes share one capacity reading. Mounted
+snapshots and other drives are excluded from that plan.
+
+The primary Scan button sits above the results. An explicit scan reveals
+measured allocations incrementally and can continue with the popup closed.
+**Pause & keep results** and **Continue scan** preserve the user's work.
+Restoring after a shell restart loads saved data without resuming automatically.
+Busy folders are labelled partial while other known folders continue.
+
+The visual hierarchy follows the existing Tufte-inspired separation of
+quantities: capacity first, then scoped allocation, coverage, bands and a
+precise ledger. Length still encodes just one measure. Unfinished rows say
+**Exploring…** or show a known `≥` lower bound; a count of entries and remaining
+folders replaces any invented completion percentage. All actions and map
+interaction retain their ledger equivalents, and Storage has no process-kill
+or file-deletion path.
+
+`StorageJob.qml` owns scan continuation in the shared runtime. Each view owns
+its independent paged queries. Checkpoints stay coupled to their true scope;
+adopting another inventory retires obsolete queries and resets navigation.
+Current retained-member queries refresh Other rows by ID, including off-page
+members. An older query failure cannot strand the final refresh.
+
+`raman_storage_jobs.py` uses compact indexed integer nodes and a persisted
+directory frontier. Each worker slice commits nodes, ancestor totals and Linux
+directory cookies in one transaction. Root identities, no-follow traversal,
+changed-directory refusal and validated FD-based Open/Copy retain the original
+read-only contract. Two inventories are kept, with 240 MiB of metadata per
+inventory; SQLite journals use additional temporary space. Reapplying the
+write connection's page budget and catalog-directed orphan recovery bound
+retained metadata even across interruptions.
+
+See the [current protocol](../protocol.md#progressive-inventories-02),
+[native gallery](../screenshots/storage-v02/README.md) and
+[Storage 0.2 verification](../qa/storage-v02.md) for evidence and limits.
+
+## Historical 0.1 design and verification
+
+The sections below record the original three merged
 milestones: S1 (explicit filesystem discovery, a cancellable allocation scan
 and private paged snapshots; PR #4),
 S2 (the page, original folder bands, ledger, validated path actions and session

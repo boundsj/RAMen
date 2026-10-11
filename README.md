@@ -2,8 +2,11 @@
   <img src="docs/art/banner.png" alt="RAMen banner: a neon ramen bowl, the RAMen wordmark in neon tubes, a vertical ラーメン (ramen) sign and three bar items at 37, 82 and 96 percent" width="100%">
 </p>
 
-An Omarchy bar widget for keeping an eye on memory: see at a glance when
-you're running low, find what's using it, and kill it in two clicks.
+A friendly Omarchy bar widget for your memory and storage. Watch the ramen
+bowl fill, find hungry apps, and explore what’s taking up disk space.
+
+[Install](#install) · [Explore Storage](#storage) · [Apps](#apps) ·
+[Settings](#settings) · [Release notes](CHANGELOG.md)
 
 ## At a glance
 
@@ -34,7 +37,7 @@ is tight (one wisp) or critical (two).
   </tr>
   <tr><th>Storage</th><th>Apps</th></tr>
   <tr>
-    <td valign="top"><img src="docs/screenshots/final-qa/storage-ready.png" alt="Storage page: filesystem capacity strip with labelled used, reserved and available, original synthetic fixture folder bands and a ledger; genuine native capture" width="320"></td>
+    <td valign="top"><img src="docs/screenshots/storage-v02/ready.png" alt="Storage 0.2: a completed Serving Board inventory, proportional folder bands and allocated-size ledger; native Omarchy VM capture" width="320"></td>
     <td valign="top"><img src="docs/screenshots/final-qa/apps-cpu.png" alt="Apps page, CPU lens: synthetic demo rows with sizes, CPU shares and separate RAM and CPU rails; genuine native capture" width="320"></td>
   </tr>
   <tr><th>Apps details (offscreen)</th><th>Light theme (offscreen)</th></tr>
@@ -44,10 +47,11 @@ is tight (one wisp) or critical (two).
   </tr>
 </table>
 
-<sub>The first four panels are <b>genuine native Omarchy captures</b> at 160%
-in Tokyo Night: built-in synthetic Memory/History/Apps scenes and an original
-Storage fixture with real filesystem measurements.
-[Gallery and provenance](docs/screenshots/final-qa/README.md).
+<sub>The first four panels are <b>native Omarchy captures</b> in Tokyo Night.
+Memory, History and Apps use synthetic scenes at 160%
+([gallery and provenance](docs/screenshots/final-qa/README.md)). Storage 0.2
+uses an original fixture on a real ext4 filesystem in Try Omarchy at 200%
+([gallery and provenance](docs/screenshots/storage-v02/README.md)).
 The bar previews and final table row remain <b>Qt 6.8 offscreen renders</b>,
 not native screenshots ([method](docs/previews/README.md)).
 The [verification summary](docs/qa/final-qa-evidence.md) describes measured
@@ -87,8 +91,8 @@ evidence. [Native masters and provenance](docs/media/masters/provenance.json).</
   observation. Desktop alerts are opt-in and off by default.
 - **Storage page:** one filesystem's used / reserved / available capacity, and
   separately what a folder you choose actually allocates, as proportional
-  folder bands over a size ledger. Scans happen only when you press Scan, can
-  be cancelled, and are cached privately for browsing. Open a folder or copy a
+  folder bands over a size ledger. Start from your files or scan Main storage;
+  results arrive as you go, with Pause and Continue for bigger bowls. Open a folder or copy a
   path; nothing is ever deleted. See [Storage](#storage).
 - **Apps page:** every app group, not just the top memory users, ranked by
   memory or recent CPU. Each row shows its size (PSS + swapped) and its share
@@ -168,8 +172,9 @@ Apps page searches and sorts through `apps.query` without rescanning. While
 the Apps page is visible (and `gpuMetrics` is `auto`), a worker thread reads
 your processes' DRM GPU descriptors at most every 5 s for per-app GPU memory
 and engine use; Memory alone never does. Storage discovery, scans and cache queries run
-in separate owned worker processes, only on request from a visible Storage
-page. It talks JSON lines over stdout and takes commands on stdin,
+in separate owned worker processes. Opening Storage only discovers folders
+and capacity; an explicitly started scan can continue with the popup closed,
+until you pause it or the shell exits. It talks JSON lines over stdout and takes commands on stdin,
 and it exits when the shell goes away.
 
 ## History data
@@ -253,105 +258,86 @@ notification checks, captures, and the remaining hardware and QA gates.
 
 ## Storage
 
-Storage answers "this drive is filling up: what's in it?" without guessing.
+**What’s filling your bowl?** Open Storage to see free space right away and
+browse folders without waiting for a recursive scan.
 
-**Opening the page** discovers the filesystem's capacity and shows a compatible
-cached inventory if there is one. It never starts a recursive scan. Choose
-Home, Root, a local volume, or type an absolute folder path, then press
-**Scan** (or **Rescan**). Capacity refreshes every 30 seconds while Storage is
-visible; that never scans either.
+<table>
+  <tr><th>Choose your ingredients</th><th>Keep your progress</th></tr>
+  <tr>
+    <td valign="top"><img src="docs/screenshots/storage-v02/welcome.png" alt="Storage welcome: My files, immediate capacity and folder browsing before a scan" width="320"></td>
+    <td valign="top"><img src="docs/screenshots/storage-v02/paused.png" alt="Paused Storage scan: 35,001 measured entries, 66 folders left, lower-bound sizes and Continue scan" width="320"></td>
+  </tr>
+</table>
 
-**Two separate numbers.** The filesystem line and strip show used, reserved
-and available bytes for one filesystem. Below it, the scoped allocation is what
-the chosen folder's readable entries actually occupy on disk
-(`st_blocks * 512`, hardlinks counted once, hidden entries included and
-marked, directory overhead included). The two never have to add up:
-compression, shared extents, snapshots, other mounts, permissions and open
-deleted files all make them differ, and neither predicts exactly how much space
-deleting something would free. Unreadable or excluded entries make a scan
-**partial**; its totals are lower bounds (`≥`), never zero-filled.
+<sub>Native Try Omarchy captures. [See Main storage and the full gallery](docs/screenshots/storage-v02/README.md).</sub>
 
-**Folder bands and ledger.** Up to three levels of nested horizontal bands sit
-in one frame; only width encodes size, and the selected entry gets an outline
-matching the ledger highlight. Clicking a folder band recentres on it. Tiny
-entries gather in **Other**, which opens its real members with paging. The
-ledger shows name, allocation and share, 50 rows per page; **Folder itself**
-selects the current directory's own allocation, **All entries** returns to its
-children, **Tiny entries** lists entries too small to draw. The filter is a
-literal, case-insensitive name match **in the current directory only**, not a
-recursive search; the bands hide while it is active. While entries load, older
-rows stay visible but actions are disabled.
+1. Start with **My files** (your Home folder), choose a folder below it, or
+   use **Choose a folder…** to enter a path.
+2. Press **Scan this folder**. Sizes and folder bands appear as the scan
+   progresses. Select a big folder and **Descend** to see what is inside.
+3. For a bigger picture, choose **Main storage**, then **Scan main storage**.
+   This covers the mounted folders on the filesystem containing Home. On
+   Btrfs, that can include Home and System subvolumes, without counting the
+   capacity twice. Other drives, network mounts and mounted snapshots are
+   excluded. Use **Local volume** to explore another drive separately.
 
-**Scan, cancel and status.** Scanning shows an activity indicator and entry
-counts, never an invented percentage. Cancel waits for the backend to settle:
-a scan that finished first can still win, and the page then shows the actual
-selected snapshot. If the backend cannot confirm the outcome, the page says
-the outcome is uncertain or unknown and reloads the cache it actually selected;
-a snapshot whose activation is not yet durable is labelled so. States you may
-see: discovering, unscanned, scanning, ready, partial, cancelled, missing, changed/remounted, unsupported,
-invalid path, limit reached, cache unavailable and helper failed. Limits
-suggest a narrower folder. Helper failure offers **Reload cache**, and a
-restarted helper reloads capacity and cache only. When capacity refresh finds
-the scope missing or replaced by another filesystem, old rows and actions are
-dropped until you scan again. Read-only filesystems are labelled and can still
-be inventoried.
+**Take your time.** A scan you start can keep running with the popup closed.
+**Pause & keep results** saves the measured entries; **Continue scan** picks
+up where it left off. Restarting the shell restores the saved view and waits
+for you to continue. There is no invented progress percentage: RAMen shows
+entries found and folders still to explore. Busy folders that change are marked
+partial while other known folders continue. Earlier measurements stay available;
+**Rescan** makes a fresh view. A scan that reaches its metadata budget also keeps its results;
+choose a smaller folder for the remaining detail.
 
-**Actions.** **Open directory / parent** opens a selected folder, or a selected
-file's parent folder, in your file manager through the desktop portal; it never
-runs the file. **Copy path** puts the exact UTF-8 path on the clipboard with
-`wl-copy`. Open needs system GIO, a session bus and an OpenURI desktop-portal
-backend; if any is missing the action reports that it is unavailable. Both actions
-re-validate the path's identity first; if anything changed you are asked to
-rescan. Snapshots made before path actions existed stay browsable but need a
-rescan before Open/Copy. Paths that are not valid UTF-8 browse and open
-normally but cannot be copied as text. Storage has no delete, trash, cleanup,
-privileged scan or process kill.
+**Read the numbers.** The capacity strip shows used, reserved and available
+space on one filesystem. Folder sizes show allocated disk space, including
+hidden files and directory overhead. A `≥` is a lower bound: the folder is
+still being explored, or some entries could not be read. **Exploring…** is
+unmeasured content, rather than a zero-byte folder. These sizes can differ
+from drive usage because of permissions, compression, shared extents,
+snapshots and open deleted files. They do not predict space freed by deletion.
 
-**Keyboard** (ledger focused): `j` / `k` select, Enter / `l` descend, `h` /
-Backspace go up, `k` / Up from the first row returns to the page buttons, `r`
-rescans, `c` cancels, `o` opens, `y` copies, Esc goes up or closes at the scope
-root. Path and filter fields own their editing keys; Esc leaves the field.
-Every map action has a button or ledger equivalent.
+**Explore safely.** The bands and ledger describe the same folders. Select a
+row, descend into directories, use breadcrumbs to return, and filter names
+inside the current folder. **Other** and **Tiny entries** expose the smaller
+members with paging. **Open directory / parent** opens your file manager;
+**Copy path** copies the exact UTF-8 path. Both recheck that the measured entry
+has not changed. RAMen never deletes files, follows directory symlinks, runs
+a selected file, requests elevated privileges or sends this inventory anywhere.
 
-**Cache and privacy.** Snapshots are private SQLite files in
-`$XDG_CACHE_HOME/raman/storage` (default `~/.cache/raman/storage`): at most
-three scopes and 128 MiB, reusable for seven days and only while the
-filesystem's identity still matches. They hold metadata and paths only, never
-file contents, and are not part of History; `clearHistory` does not touch them.
-To remove them, delete that directory while Storage is closed. RAMen never
-writes to scanned files.
+With the ledger focused: `j` / `k` select, Enter / `l` descend, `h` /
+Backspace go up, `r` starts a fresh scan, `c` pauses, `o` opens and `y` copies.
+Esc goes up or closes at the scope root. From the page buttons, press Down
+first. Text fields keep their normal editing keys. Continue uses its button.
 
-**Platform support and limits.**
+**Local cache.** Two recent inventories are kept privately under
+`$XDG_CACHE_HOME/raman/storage` (normally `~/.cache/raman/storage`). Each has
+up to 240 MiB of metadata; SQLite journals use additional temporary space.
+The older inventory stays available while you rescan. Inventories contain
+paths and metadata, never file contents. Identity is checked before reuse:
+a reboot, remount or replaced scope needs a fresh scan. To clear the cache,
+pause scanning and close the shell before deleting RAMen’s Storage cache
+folder. History is separate; `clearHistory` does not remove Storage data.
 
-- Linux 6.8 or newer, on an allowlisted local filesystem (ext2/3/4, Btrfs,
-  XFS, F2FS, ZFS, bcachefs and the others listed in `raman_storage.py`) whose
-  root reports a birth time. Safe identity uses Linux unique mount IDs; when it
-  is unavailable the scope is reported unsupported instead of reusing a cache
-  by path. Native QA has used Btrfs only.
-- Pseudo, network, RAM-backed (tmpfs) and unknown filesystems are excluded
-  with a reason. Nested mounts are skipped and offered as separate scopes;
-  Root shows a Home subvolume as excluded rather than empty.
-- Scan ceilings: 200,000 entries, 128 levels deep, 120 seconds. These are
-  internal constants, not settings.
-- A worker stuck in uninterruptible disk I/O exits only when the kernel
-  returns; the panel never waits on it.
+Storage needs 64-bit Linux 6.8+ and a supported local filesystem with safe
+identity available. Work happens in steps of at most 5,000 entries or about
+1.5 seconds; an individual slow filesystem call can take longer. Scans stop
+at 10 million entries, 128 directory levels or the metadata budget, keeping
+committed progress. Unreadable content and nested mounts are labelled.
+Legacy 0.1 inventories remain browsable through their older bounded protocol
+and are limited to three scopes / 128 MiB / seven days.
 
-**Measured performance** on native Linux 7.2.5/Btrfs with Omarchy 4.0.4 at the
-[S3 native QA](docs/design/storage.md#verification-record-and-remaining-coverage)
-revision (storage backend unchanged since): cached pages 38–45 ms for a
-50,000/60,000-entry folder, cancel acknowledged in under 1 ms, scan worker gone
-about 240 ms after Cancel, and the 2-second memory summary kept its spacing
-(at most 2.0 s) through the 60,000-entry scan. These are measurements from that machine, not guarantees.
+The million-entry warm Linux fixture completed a scan and rescan in about
+15 seconds each, using about 117 MiB of metadata per inventory. That measures
+the scanner directly on empty synthetic files, rather than cold-drive or
+end-to-end UI performance. The native Omarchy VM checks and their limits are
+recorded in the [Storage 0.2 verification](docs/qa/storage-v02.md).
 
-`storageRememberScope` remembers the last chosen scope while enabled, in the
-shared runtime for this shell session only; reopening starts at that scope's
-snapshot root. It stores no selected node/filter on disk. Off starts at Home on
-each open. `storageShowMap` hides the bands while retaining all ledger controls.
-
-Design rationale, accounting and verification records:
-[Storage design](docs/design/storage.md), [JSON protocol](docs/protocol.md#storage-backend).
-The Storage image above is a [native synthetic-fixture capture](docs/screenshots/final-qa/README.md).
-See the [verification summary](docs/qa/final-qa-evidence.md) for hardware and visual coverage.
+`storageRememberScope` remembers your chosen scope for the shell session;
+off starts at Home each time. `storageShowMap` hides the bands while keeping
+the ledger. See the [Storage design](docs/design/storage.md) and
+[JSON protocol](docs/protocol.md#storage-backend) for details.
 
 ## Apps
 
@@ -481,10 +467,11 @@ shell exposes one. History measurements and incident markers never animate.
 
 RAMen requires Omarchy's Quickshell shell and plugin system, with its `qs.Ui`
 and `qs.Commons` modules. Native UI verification used Omarchy 4.0.4,
-Quickshell 0.3.1 and Qt 6.11.2; see the [coverage and limits](docs/qa/final-qa-evidence.md).
+Quickshell 0.3.1 and Qt 6.11.2; see the [original hardware coverage](docs/qa/final-qa-evidence.md)
+and [Storage 0.2 VM checks](docs/qa/storage-v02.md).
 Python 3 runs the bundled helper using only its standard library; no build
 step is needed. Memory and process metrics require Linux `/proc`; Storage
-requires Linux 6.8+ and a supported local filesystem. GPU readings depend on
+requires 64-bit Linux 6.8+ and a supported local filesystem. GPU readings depend on
 the driver's DRM statistics and may be unavailable.
 
 Optional desktop integrations are `wl-copy` (from `wl-clipboard`) for copying

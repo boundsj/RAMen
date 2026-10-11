@@ -48,6 +48,9 @@ appropriate source, test, or documentation file. Promote an artifact into
 - `StorageView.qml` and `StorageModel.js`: explicit Storage scan/cache browsing,
   keyed generation/reply handling, original proportional bands and the ledger.
   Open/copy use the backend validated action contract, never display labels.
+- `StorageJob.qml`: the runtime's shared progressive Storage job driver. It
+  keeps snapshots paired with their scopes, starts slices only after explicit
+  Scan/Continue, runs across popup closes, and restores without auto-scanning.
 - `HistoryModel.js`: pure chart geometry, labelled scales, cursor readouts,
   coverage states/read-only receipts and the live incident dwell/cooldown state machine.
 - `Level.js`: pure helpers for thresholds, hysteresis, formatting, and theme
@@ -91,6 +94,12 @@ appropriate source, test, or documentation file. Promote an artifact into
   traversal, private validated SQLite snapshots and paged queries in owned
   workers. The probe's controller handles client generations/cancel/leave/EOF;
   the Storage page consumes its bounded queries and validated path actions.
+- `raman_storage_jobs.py`: compact SQLite inventories with a persisted directory
+  frontier, atomic bounded checkpoints, Main storage filesystem grouping and
+  retained-member queries. `tests/test_storage_jobs.py` covers recovery, cache
+  budgets, changed directories, identities, paging and helper cleanup;
+  `tests/qml/tst_storage_progress.qml`, `tst_storage_recovery.qml` and
+  `tst_storage_status.qml` cover shared-driver, reply, recovery and status races.
 - `tests/test_level.js`, `tests/test_design.js`, `tests/test_runtime.js`, `tests/test_panel_nav.js`,
   `tests/test_history_model.js`, `tests/test_incidents.js`, `tests/test_apps_model.js`,
   `tests/test_incidents.py`, `tests/test_probe.py`, `tests/test_apps.py`,
@@ -110,6 +119,10 @@ appropriate source, test, or documentation file. Promote an artifact into
 - `tests/test_storage.py` and `scripts/check-storage.py`: Linux/test-owned
   allocation, cache, bounded protocol and owned-worker lifecycle checks. The
   executable checker puts all fixtures/logs under `.agent-artifacts`.
+- `scripts/check-storage-jobs.py`: two progressive scans over an original
+  disposable fixture, checking complete coverage and ledger counts while
+  recording slice/query timing. Defaults to 60,000 files; `--files 1000000`
+  runs the larger stress fixture. Needs Linux; cleans up its own fixture.
 - `scripts/storage-demo.py` and `tests/test_storage_demo.py`: original
   synthetic Storage fixture trees (Linux, beneath `.agent-artifacts` only);
   Storage has no IPC demo scene.

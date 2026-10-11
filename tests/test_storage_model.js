@@ -97,3 +97,7 @@ for (const code of ['scan-time-limit','scan-entry-limit','scan-depth-limit','cac
 assert.equal(M.failure('worker-failed').state,'helper-failed');
 assert.equal(M.failure('invalid-path').state,'invalid-path');
 assert.equal(M.failure('invalid-path').invalidates,true);
+
+// A snapshot scope remains equivalent across path / byte-path requests.
+assert.strictEqual(M.sameScope({path:"/home/雪/🍜"}, {pathBytes:Buffer.from("/home/雪/🍜").toString("base64"),kind:"folder"}), true)
+assert.strictEqual(M.sameScope({path:"/home/a"}, {path:"/home/a",kind:"main"}), false)
