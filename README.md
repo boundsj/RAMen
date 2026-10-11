@@ -125,6 +125,13 @@ Omarchy 4.0.4 host reuses an already-open copy, even on another monitor; close
 that panel before opening on a different output. This host allows one popup
 at a time across its bars.
 
+Apps search and Storage's path/filter fields support normal typing, selection,
+undo and input methods. Paste one line with Ctrl+V, Shift+Insert or the middle
+mouse button. RAMen reads clipboard contents only when you paste; oversized,
+multiline or slow clipboard offers leave the field unchanged and show a message.
+Paste needs `wl-paste`; typing remains available without it. See the
+[clipboard verification](docs/qa/clipboard-v021.md) for limits and coverage.
+
 ## Killing
 
 Two steps, so a stray click can't take out Chrome:
@@ -474,8 +481,8 @@ step is needed. Memory and process metrics require Linux `/proc`; Storage
 requires 64-bit Linux 6.8+ and a supported local filesystem. GPU readings depend on
 the driver's DRM statistics and may be unavailable.
 
-Optional desktop integrations are `wl-copy` (from `wl-clipboard`) for copying
-Storage paths, and system GIO/GLib, the desktop portal and a file manager for
+Optional desktop integrations are `wl-copy` and `wl-paste` (from `wl-clipboard`)
+for copying Storage paths and pasting into text fields, and system GIO/GLib, the desktop portal and a file manager for
 opening directories. Incident notifications use Omarchy's
 `omarchy-notification-send` helper. Missing integrations report an unavailable
 action; they do not require installing Python packages. Git and Omarchy's own

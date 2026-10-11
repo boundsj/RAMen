@@ -28,7 +28,7 @@ Item {
   property real now: Date.now()
   property real maxHeight: 600
 
-  readonly property bool inputOwned: searchInput.activeFocus
+  readonly property bool inputOwned: searchInput.inputOwned
   readonly property bool detailsOpen: details !== null
   readonly property int rowIndex: AM.selectedIndex(model)
   readonly property bool armed: !!model.armed
@@ -379,8 +379,10 @@ Item {
       }
     }
 
-    TextField {
+    RamanTextField {
       id: searchInput
+      clipboard: root.runtime ? root.runtime.inputClipboard : null
+      menuSurface: root.surface
       objectName: "appsSearchInput"
       width: parent.width
       maximumLength: 256
@@ -407,14 +409,13 @@ Item {
         }
       }
       onActiveFocusChanged: if (activeFocus) root.disarm("")
-      onTextEdited: searchDelay.restart()
+      onBoundedEdited: searchDelay.restart()
       onAccepted: {
         searchDelay.stop()
         root.changeQuery(text)
         focus = false
         root.panel.focusRegion("list")
       }
-      Keys.priority: Keys.AfterItem
       Keys.onEscapePressed: function(event) {
         // Leaves search (the query stays); Escape again then follows the page order.
         searchDelay.stop()

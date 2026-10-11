@@ -108,3 +108,8 @@ assert.equal(R.replyStream({ type: "killed", requestId: "k:x:1", code: "stale-me
 assert.ok(JSON.stringify(kill).length < 4096);
 
 console.log("runtime tests passed");
+
+// Clipboard errors carry a worker client but must never reach the Storage page.
+assert.equal(R.replyStream(null), "");
+assert.equal(R.replyStream({type: "input-result", requestId: "p:x:1", clientId: "x"}), "input");
+assert.equal(R.replyStream({type: "error", requestId: "p:x:1", clientId: "x"}), "input");

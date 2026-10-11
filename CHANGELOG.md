@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.2.1 — Bounded clipboard input
+
+- Apps search and both Storage fields no longer read clipboard contents when
+  another application changes the clipboard, including while forms are hidden.
+- Explicit paste runs outside the UI thread with a byte cap, a total deadline
+  and the field's length limit. Invalid, oversized or slow offers leave the
+  field unchanged; moving, editing, hiding or closing the field cancels a read.
+- Native Unicode/input-method editing, selection and undo/redo remain available;
+  each paste has its own undo step, separate from earlier and later typing.
+  Long paths scroll to keep the caret visible. Paste requires the optional
+  `wl-paste` integration; no new settings or package installation is required.
+- Added backend, Qt and native Wayland regression checks. See
+  [clipboard verification and scope](docs/qa/clipboard-v021.md).
+
+Update through Omarchy's plugin manager, then restart the shell to replace
+previously loaded components. The plugin ID and retained Storage data are
+unchanged. This patch fixes RAMen's fields; other plugins' clipboard readers
+are outside its scope.
+
 ## 0.2.0 — Friendly Storage exploration
 
 - Open Storage at **My files**, see free space immediately, and browse folders

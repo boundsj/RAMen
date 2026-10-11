@@ -63,7 +63,7 @@ Item {
   readonly property var ledgerRows: visibleRows()
   property real now: Date.now()
   property real maxHeight: 600
-  readonly property bool inputOwned: pathInput.activeFocus || filterInput.activeFocus
+  readonly property bool inputOwned: pathInput.inputOwned || filterInput.inputOwned
   readonly property bool cachePending: pendingPurpose("reconciled")
   readonly property bool queryPending: pendingLedger()
   readonly property bool helperAvailable: !!owner && owner.storageHelperAvailable
@@ -132,8 +132,10 @@ Item {
       function onClicked() { Qt.callLater(root.restoreNavigationFocus) }
     }
   }
-  component StorageField: TextField {
+  component StorageField: RamanTextField {
     id: field
+    clipboard: root.runtime ? root.runtime.inputClipboard : null
+    menuSurface: root.surface
     color: root.foreground
     font.family: root.fontFamily
     font.pixelSize: Style.font.bodySmall
@@ -706,7 +708,6 @@ Item {
           placeholderText: "Absolute folder path"
           Accessible.name: "Storage folder path"
           onAccepted: { root.changeScope({ path: text }); focus = false }
-          Keys.priority: Keys.AfterItem
           Keys.onEscapePressed: function(event) { focus = false; event.accepted = true }
         }
         StorageButton { id: pathGo; text: "Go"; onClicked: { root.changeScope({ path: pathInput.text }); pathInput.focus = false } }
@@ -921,7 +922,6 @@ Item {
           if (root.scanning || root.reconciling || !root.listing) return
           root.applyFilter(text); focus = false
         }
-        Keys.priority: Keys.AfterItem
         Keys.onEscapePressed: function(event) { focus = false; event.accepted = true }
       }
       // Ledger column headers: names, then right-aligned numbers.

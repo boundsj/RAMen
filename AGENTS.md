@@ -44,6 +44,22 @@ appropriate source, test, or documentation file. Promote an artifact into
   details, ID-based selection, pointer/armed freeze with queued updates, and
   the two-step kill sent as `apps.kill` with the armed membership generation.
   `AppsModel.js` is pure (Node-tested); the view only renders and wires.
+- `RamanTextField.qml`: single-line fields backed by native plain `TextEdit`,
+  whose clipboard-change callback checks formats without reading text. Its own
+  menu routes Paste through the worker; never add a Controls TextArea default
+  clipboard menu. A clipped Flickable keeps the caret visible. Preserve native
+  keyboard, selection and IME editing; intercept every Paste gesture before
+  native paste. Bounded paste replaces only the native cursor selection through
+  `cursorSelection.text`, with `textDocument.modified = false` checkpoints on
+  both sides. Preserve the caret, adjacent typing and atomic paste Undo/Redo;
+  assigning `text` discards history and separate remove/insert splits paste.
+  `InputModel.js` validates whole single-line edits using UTF-16 field limits.
+  `InputClipboard.qml` owns one correlated, explicit paste request per runtime;
+  replies cannot change a hidden, unfocused or edited field.
+- `raman_clipboard.py`: explicit `wl-paste` reads in the existing owned worker
+  controller, never the UI/main probe. A total deadline, byte cap and UTF-16
+  cap bound reads; cancelled/failed workers clean up helper descendants. No
+  clipboard observation, persistence or cache access.
 - `HistoryView.qml`: the read-only History page.
 - `StorageView.qml` and `StorageModel.js`: explicit Storage scan/cache browsing,
   keyed generation/reply handling, original proportional bands and the ledger.
@@ -198,7 +214,7 @@ Run the relevant suites from the repository root; run both for changes that
 span the probe and UI helpers:
 
 ```bash
-node tests/test_level.js && node tests/test_design.js && node tests/test_runtime.js && node tests/test_panel_nav.js && node tests/test_history_model.js && node tests/test_incidents.js && node tests/test_storage_model.js && node tests/test_apps_model.js
+node tests/test_level.js && node tests/test_design.js && node tests/test_runtime.js && node tests/test_panel_nav.js && node tests/test_history_model.js && node tests/test_incidents.js && node tests/test_storage_model.js && node tests/test_apps_model.js && node tests/test_input_model.js
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests
 ```
 
@@ -206,6 +222,15 @@ The tests need Node.js and Python 3. The Python suite also needs Linux `/proc`
 and the `sleep` command; it spawns its own child process for signal tests.
 Add focused regression coverage for changed behavior. These suites do not
 render QML, so UI changes also need a check in a running Omarchy shell.
+
+`tests/test_clipboard.py` checks helper budgets, validation, cancellation and
+ownership. `tests/qml/tst_input.qml` checks native edits, explicit paste,
+selection, stale replies, focus/restart cancellation, scrolling and input limits.
+`scripts/check-input-clipboard.py --disposable-session` compiles original fixtures
+in `.agent-artifacts` and compares native Qt TextField with the replacement on
+Wayland, including hidden fields and a Japanese/emoji IME commit. It deliberately
+replaces the clipboard; run only in a disposable session. Compiler, Qt development
+headers, Wayland development tools/protocol XML and wl-copy are test dependencies.
 
 ## Manual UI and documentation checks
 
