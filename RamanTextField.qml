@@ -93,6 +93,12 @@ FocusScope {
       validCursor = cursorPosition; validStart = selectionStart; validEnd = selectionEnd
     }
   }
+  function cursorChanged() {
+    rememberCursor()
+    var before = pendingPaste
+    if (before && (cursorPosition !== before.cursor || selectionStart !== before.start || selectionEnd !== before.end))
+      invalidatePaste()
+  }
   ToolTip.visible: activeFocus && inputError !== ""
   ToolTip.text: inputError
   ToolTip.timeout: 4000
@@ -152,9 +158,9 @@ FocusScope {
   }
   Connections {
     target: editor
-    function onCursorPositionChanged() { field.rememberCursor() }
-    function onSelectionStartChanged() { field.rememberCursor() }
-    function onSelectionEndChanged() { field.rememberCursor() }
+    function onCursorPositionChanged() { field.cursorChanged() }
+    function onSelectionStartChanged() { field.cursorChanged() }
+    function onSelectionEndChanged() { field.cursorChanged() }
   }
   Component.onDestruction: invalidatePaste()
   Connections {

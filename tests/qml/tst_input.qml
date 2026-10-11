@@ -81,6 +81,14 @@ TestCase {
     compare(driver.actor, null)
     compare(field.text, "abc")
   }
+  function test_pointer_selection_change_cancels_pending_read() {
+    field.text = "abc"; field.cursorPosition = 3
+    field.paste(); field.select(0,2)
+    compare(driver.actor, null)
+    compare(field.pendingPaste, null)
+    compare(runtime.commands[runtime.commands.length - 1].command, "input.cancel")
+    compare(field.text, "abc")
+  }
   function test_context_menu_paste_uses_owned_reader() {
     field.text = "abc"; field.selectAll()
     mouseClick(field, 20, 12, Qt.RightButton)
