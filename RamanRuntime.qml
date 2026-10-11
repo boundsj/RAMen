@@ -250,6 +250,9 @@ Item {
   property var storageScope: null
   readonly property alias storageJob: storageJob
   StorageJob { id: storageJob; runtime: root }
+  readonly property alias inputClipboard: inputClipboard
+  InputClipboard { id: inputClipboard; runtime: root }
+  signal inputMessage(var message)
   // memory | cpu | gpu-memory; AppsModel.defaultSort makes an unavailable one fall back visibly.
   readonly property string appsDefaultSort: String(setting("appsDefaultSort", "memory"))
   // off | auto: auto samples GPU clients only while an Apps page is visible.
@@ -367,6 +370,10 @@ Item {
     var message
     try { message = JSON.parse(line) } catch (e) { return }
     var stream = Runtime.replyStream(message)
+    if (stream === "input") {
+      root.inputMessage(message)
+      return
+    }
     if (stream === "storage") {
       root.storageMessage(message)
       return

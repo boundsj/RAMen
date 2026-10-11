@@ -132,8 +132,9 @@ Item {
       function onClicked() { Qt.callLater(root.restoreNavigationFocus) }
     }
   }
-  component StorageField: TextField {
+  component StorageField: RamanTextField {
     id: field
+    clipboard: root.runtime ? root.runtime.inputClipboard : null
     color: root.foreground
     font.family: root.fontFamily
     font.pixelSize: Style.font.bodySmall
@@ -706,7 +707,6 @@ Item {
           placeholderText: "Absolute folder path"
           Accessible.name: "Storage folder path"
           onAccepted: { root.changeScope({ path: text }); focus = false }
-          Keys.priority: Keys.AfterItem
           Keys.onEscapePressed: function(event) { focus = false; event.accepted = true }
         }
         StorageButton { id: pathGo; text: "Go"; onClicked: { root.changeScope({ path: pathInput.text }); pathInput.focus = false } }
@@ -921,7 +921,6 @@ Item {
           if (root.scanning || root.reconciling || !root.listing) return
           root.applyFilter(text); focus = false
         }
-        Keys.priority: Keys.AfterItem
         Keys.onEscapePressed: function(event) { focus = false; event.accepted = true }
       }
       // Ledger column headers: names, then right-aligned numbers.

@@ -1218,7 +1218,13 @@ def worker_main():
 
     try:
         name = command["command"]
-        if name == "storage.browse":
+        if name == "input.paste":
+            import raman_clipboard
+            try:
+                send("input-result", text=raman_clipboard.read_text(command["limit"], command.get("primary", False)))
+            except raman_clipboard.ClipboardError as exc:
+                send("error", code=exc.code, message=str(exc))
+        elif name == "storage.browse":
             base = envelope(command, "storage-browse")
             sys.stdout.buffer.write(wire(dict(base, **browse(command, base))))
             sys.stdout.buffer.flush()
@@ -1280,7 +1286,7 @@ def worker_main():
             scanner.close()
         if cache is not None:
             cache.close()
-        if command["command"] in ("storage.action", "storage.job.action") and not action_complete and os.getpgrp() == os.getpid():
+        if command["command"] in ("storage.action", "storage.job.action", "input.paste") and not action_complete and os.getpgrp() == os.getpid():
             # Failed/timed-out launcher leaders can leave children behind. The
             # error is flushed first; no successful desktop handoff is revoked.
             os.killpg(os.getpid(), signal.SIGKILL)
@@ -1306,7 +1312,7 @@ class Controller:
     def handle(self, command):
         request_id = command.get("requestId")
         name = command.get("command")
-        allowed = {"storage.locations", "storage.start", "storage.step", "storage.pause", "storage.job", "storage.job.children", "storage.job.action", "storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
+        allowed = {"input.paste", "input.cancel", "storage.locations", "storage.start", "storage.step", "storage.pause", "storage.job", "storage.job.children", "storage.job.action", "storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
         if name not in allowed:
             return error(request_id, "unknown-command", "unknown storage command")
         client = command.get("clientId")
@@ -1319,20 +1325,24 @@ class Controller:
             prior = self.generations.get(client, -1)
             if generation < prior:
                 raise StorageError("stale-generation", "storage client generation is obsolete")
-            if name in ("storage.cancel", "storage.leave"):
+            if name == "input.paste":
+                integer(command, "limit", None, 1, 2048)
+                if type(command.get("primary", False)) is not bool:
+                    raise StorageError("bad-request", "clipboard selection must be a boolean")
+            if name in ("storage.cancel", "storage.leave", "input.cancel"):
                 if generation <= prior:
                     raise StorageError("stale-generation", "cancel/leave must advance the client generation")
                 scan_id = command.get("scanId")
                 if name == "storage.cancel" and (not isinstance(scan_id, str) or not ID_RE.fullmatch(scan_id)):
                     raise StorageError("bad-request", "cancel requires the owned scanId")
                 matching = [j for j in self.jobs.values() if j["client"] == client and
-                            (name == "storage.leave" or j["command"].get("scanId") == scan_id)]
+                            (name in ("storage.leave", "input.cancel") or j["command"].get("scanId") == scan_id)]
                 queued = [c for c in self.pending if c["clientId"] == client and
-                          (name == "storage.leave" or c.get("scanId") == scan_id)]
+                          (name in ("storage.leave", "input.cancel") or c.get("scanId") == scan_id)]
                 if name == "storage.cancel" and not matching and not queued:
                     raise StorageError("unknown-scan", "scan is not active for this client")
                 self.generations[client] = generation
-                cause = "leave" if name == "storage.leave" else "cancel"
+                cause = "leave" if name in ("storage.leave", "input.cancel") else "cancel"
                 recovering = any(j["command"]["command"] in ("storage.scan", "storage.reconcile") for j in matching) \
                     or any(c["command"] == "storage.reconcile" for c in queued)
                 # Mandatory recovery survives page/client generations. Update
@@ -1367,7 +1377,7 @@ class Controller:
                     self.launch()
                     return message("storage-progress", request_id, clientId=client, generation=generation,
                                    scanId=scan_id, status="leaving" if name == "storage.leave" else "cancelling", entries=0)
-                return message("storage-result", request_id, clientId=client, generation=generation,
+                return message("input-result" if name == "input.cancel" else "storage-result", request_id, clientId=client, generation=generation,
                                scanId=scan_id, status="left" if name == "storage.leave" else "cancelled",
                                commitState="not-committed", previousSnapshotRetained=True)
             if generation > prior:

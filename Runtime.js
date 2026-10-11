@@ -119,6 +119,8 @@ function acceptsAppsReply(pendingId, generation, message) {
 // Errors are routed by ownership, never broadcast across unrelated pages.
 function replyStream(message) {
   if (!message) return ""
+  if (message.type === "input-result"
+      || (message.type === "error" && /^p:/.test(String(message.requestId)))) return "input"
   if (message.type === "apps-page" || message.type === "apps-details"
       || (message.type === "error" && /^[adk]:/.test(String(message.requestId)))) return "apps"
   if (String(message.type).indexOf("storage-") === 0 || message.clientId !== undefined) return "storage"

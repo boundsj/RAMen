@@ -1008,7 +1008,7 @@ def handle_json(text, state):
     if not valid_id:
         return error_reply(None, "bad-request", "requestId must be a string of at most 64 characters or an integer")
     name = command.get("command")
-    if isinstance(name, str) and name.startswith("storage."):
+    if isinstance(name, str) and (name.startswith("storage.") or name in ("input.paste", "input.cancel")):
         return state.storage.handle(command)
     if name == "apps.query":
         return apps_query(command, state, request_id)
