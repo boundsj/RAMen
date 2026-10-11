@@ -28,12 +28,15 @@ class BrowseTests(unittest.TestCase):
     def test_names_are_not_sizes_and_links_are_not_traversed(self):
         os.mkdir(self.path + b'/Documents')
         os.mkdir(self.path + b'/.hidden')
-        os.mkdir(self.path + b'/raw-\xff')
+        expected = {'Documents', '.hidden'}
+        if sys.platform.startswith('linux'):
+            os.mkdir(self.path + b'/raw-\xff')
+            expected.add('raw-\\xff')
         os.symlink('Documents', self.path + b'/link')
         Path(self.temp.name, 'file').write_text('x')
         result = storage.browse(dict(path=self.temp.name))
         self.assertFalse(result['measured'])
-        self.assertEqual({r['name'] for r in result['rows']}, {'Documents', '.hidden', 'raw-\\xff'})
+        self.assertEqual({r['name'] for r in result['rows']}, expected)
         self.assertTrue(next(r for r in result['rows'] if r['name'] == '.hidden')['hidden'])
         for row in result['rows']:
             self.assertNotIn('knownAllocatedBytes', row)
