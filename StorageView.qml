@@ -28,6 +28,7 @@ Item {
   property var folders: []
   property var folderNext: null
   property var folderParent: null
+  readonly property var browseFolders: scope.kind === "main" ? (mainStorage ? mainStorage.roots : []) : folders
   property bool choosingFolder: false
   property bool showDetails: false
   property var snapshot: null
@@ -189,7 +190,7 @@ Item {
     status = "Discovering capacity / cached snapshot"; error = ""
     send("storage.mounts", scope, "capacity")
     send(progressive ? "storage.job" : "storage.cached", scope, progressive ? "jobcache" : "cached")
-    send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 8 }), "browse")
+    if (scope.kind !== "main") send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 8 }), "browse")
     send("storage.mounts", { offset: 0, limit: 50 }, "mounts")
     if (progressive) send("storage.locations", { path: Quickshell.env("HOME") }, "locations")
   }
@@ -231,9 +232,9 @@ Item {
     if (showingSelf) return [listing.node]
     if (tinyMembers.length && !memberTail) {
       var source = memberSource || listing
-      var rows = source.segments.filter(function(r) { return tinyMembers.indexOf(r.nodeId) >= 0 })
-      if (tinyMembers.indexOf(source.nodeId) >= 0) rows.unshift(source.node)
-      return rows.slice(tinyOffset, tinyOffset + 50)
+      return tinyMembers.slice(tinyOffset, tinyOffset + 50).map(function(id) {
+        return id === source.nodeId ? source.node : SM.selected(source.segments, id)
+      }).filter(function(row) { return !!row })
     }
     return !filter && !listing.rows.length ? [listing.node] : listing.rows
   }
@@ -284,6 +285,7 @@ Item {
     if (!entriesReady) return
     clearMemberView()
     tinyMembers = listing.segments.filter(function(r) { return root.width * r.knownAllocatedBytes / Math.max(1, listing.node.knownAllocatedBytes) < 3 }).map(function(r) { return r.nodeId })
+    if (snapshot && snapshot.job && tinyMembers.length) memberSource = listing
     syncSelection(tinyMembers[0])
   }
   function page(offset) { if (!entriesReady) return; clearMemberView(); query(listing.nodeId, offset) }
@@ -318,7 +320,10 @@ Item {
     if (memberTail) {
       memberTailPages = memberTailPages.concat([listing.offset])
       query(memberSource.nodeId, listing.nextOffset)
-    } else if (tinyOffset + 50 < tinyMembers.length) tinyOffset += 50
+    } else if (tinyOffset + 50 < tinyMembers.length) {
+      tinyOffset += 50
+      if (snapshot && snapshot.job) query(memberSource.nodeId, 0)
+    }
     else { memberTail = true; query(memberSource.nodeId, memberContinuation) }
   }
   function previousMemberPage() {
@@ -331,7 +336,10 @@ Item {
       tinyOffset = Math.floor((tinyMembers.length - 1) / 50) * 50
       syncSelection("")
       if (snapshot && snapshot.job) query(listing.nodeId, 0)
-    } else tinyOffset = Math.max(0, tinyOffset - 50)
+    } else {
+      tinyOffset = Math.max(0, tinyOffset - 50)
+      if (snapshot && snapshot.job) query(memberSource.nodeId, 0)
+    }
   }
   function pendingPurpose(purpose) {
     if (!session) return false
@@ -394,7 +402,7 @@ Item {
   function up() {
     if (!entriesReady) return
     if (memberView || showingSelf) { allEntries(); return }
-    if (!listing) { if (folderParent) changeScope({ pathBytes: folderParent }); return }
+    if (!listing) { if (scope.kind !== "main" && folderParent) changeScope({ pathBytes: folderParent }); return }
     if (!listing.node.parentId) return
     navigate(listing.node.parentId)
   }
@@ -473,7 +481,7 @@ Item {
         mounts = mounts.concat((message.mounts || []).filter(function(m) { return !m.excluded && !m.error && !!m.capacity }))
         if (message.nextOffset !== null && message.nextOffset !== undefined) send("storage.mounts", { offset: message.nextOffset, limit: 50 }, "mounts")
       } else {
-        if (snapshot && !snapshot.job && snapshot.identity && !SM.sameIdentity(snapshot.identity, message.identity)) {
+        if (snapshot && (!snapshot.job || snapshot.kind !== "main") && snapshot.identity && !SM.sameIdentity(snapshot.identity, message.identity)) {
           invalidateScope("root-changed")
           error = "Filesystem/root identity changed; a matching path cannot validate the old snapshot."
           return
@@ -569,7 +577,8 @@ Item {
     var changed = !snapshot || snapshot.snapshotId !== value.snapshotId
     snapshot = value
     scanning = false; reconciling = false
-    phase = job && job.running ? "scanning" : value.status === "ready" ? (value.coverage === "partial" ? "partial" : "ready") : "paused"
+    phase = job && job.running && job.snapshot && job.snapshot.snapshotId === value.snapshotId
+      ? "scanning" : value.status === "ready" ? (value.coverage === "partial" ? "partial" : "ready") : "paused"
     status = phase === "scanning" ? "Simmering · " + value.entries + " entries · " + value.pendingFolders + " folders still to explore"
       : phase === "paused" ? "Progress saved · " + value.entries + " entries · continue whenever you like"
       : "Scan ready" + (value.coverage === "partial" ? " · some ingredients could not be measured" : "")
@@ -758,7 +767,9 @@ Item {
       // --- scoped allocation (scanned on request) --------------------------
       PanelSeparator { foreground: root.foreground }
       StorageHeader { text: root.snapshot ? "WHAT’S IN THIS BOWL" : "WHAT’S FILLING YOUR BOWL?" }
-      StorageCaption { width: parent.width; visible: !root.snapshot && !root.scanning; text: "Explore a folder, or scan this one to find the big ingredients. Nothing gets deleted." }
+      StorageCaption { width: parent.width; visible: !root.snapshot && !root.scanning; text: root.scope.kind === "main"
+        ? "Explore a mounted folder below, or scan main storage for the bigger picture. Nothing gets deleted."
+        : "Explore a folder, or scan this one to find the big ingredients. Nothing gets deleted." }
       Flow {
         width: parent.width; spacing: Style.space(6)
         StorageButton { text: root.snapshot ? "Rescan" : root.scope.kind === "main" ? "Scan main storage" : "Scan this folder"; primary: !root.snapshot; enabled: root.entriesReady && !root.jobBusy; onClicked: root.scan() }
@@ -771,19 +782,19 @@ Item {
         width: parent.width; spacing: Style.space(4)
         visible: !root.snapshot && !root.scanning
         Repeater {
-          model: root.folders
+          model: root.browseFolders
           StorageButton {
             required property var modelData
             width: parent.width
-            text: modelData.name + "/" + (modelData.hidden ? " · hidden" : "")
+            text: root.scope.kind === "main" ? modelData.path : modelData.name + "/" + (modelData.hidden ? " · hidden" : "")
             iconName: "next"
             enabled: !modelData.excluded && root.helperAvailable
             onClicked: root.changeScope({ pathBytes: modelData.pathBytes })
           }
         }
-        StorageButton { visible: !!root.folderParent; text: "Parent folder"; iconName: "back"; onClicked: root.changeScope({ pathBytes: root.folderParent }) }
-        StorageCaption { width: parent.width; text: "Folder names only · sizes appear after you scan" }
-        StorageButton { visible: root.folderNext !== null; text: "More folders"; onClicked: root.send("storage.browse", Object.assign({}, root.scope, { offset: root.folderNext, limit: 8 }), "browse") }
+        StorageButton { visible: root.scope.kind !== "main" && !!root.folderParent; text: "Parent folder"; iconName: "back"; onClicked: root.changeScope({ pathBytes: root.folderParent }) }
+        StorageCaption { width: parent.width; text: root.scope.kind === "main" ? "Included mounted folders · choose one to explore separately" : "Folder names only · sizes appear after you scan" }
+        StorageButton { visible: root.scope.kind !== "main" && root.folderNext !== null; text: "More folders"; onClicked: root.send("storage.browse", Object.assign({}, root.scope, { offset: root.folderNext, limit: 8 }), "browse") }
       }
       Flow {
         width: parent.width; spacing: Style.space(4)

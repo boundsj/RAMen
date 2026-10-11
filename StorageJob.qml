@@ -70,7 +70,7 @@ Item {
     }
     if (message.snapshot) {
       snapshot = message.snapshot
-      scope = result.entry.purpose === "start" ? requestedScope : scope || SM.scopeFrom(snapshot)
+      scope = result.entry.purpose === "start" ? requestedScope : SM.scopeFrom(snapshot)
       requestedScope = null
     }
     if (snapshot && (snapshot.status === "ready" || snapshot.pauseReason)) running = false
