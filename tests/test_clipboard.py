@@ -111,6 +111,32 @@ class ClipboardTests(unittest.TestCase):
         stat = Path('/proc') / str(pid) / 'stat'
         self.assertTrue(not stat.exists() or stat.read_text().split(') ')[1][0] == 'Z')
 
+    def test_timeout_and_owner_eof_stop_orphaned_descendants(self):
+        for mode in ['timeout', 'eof']:
+            with self.subTest(mode=mode):
+                marker = self.root / (mode + '-child')
+                self.script("\nif os.fork()==0:\n open(" + repr(str(marker))
+                            + ", 'w').write(str(os.getpid())); time.sleep(30)\n"
+                            + "time.sleep(.1); sys.exit(0)")
+                controller = storage.Controller()
+                self.addCleanup(controller.close)
+                controller.handle(dict(command='input.paste', requestId='p:test:1', clientId='paste', generation=1, limit=128))
+                end = time.monotonic() + 2
+                while not marker.exists() and time.monotonic() < end:
+                    controller.poll(); time.sleep(.01)
+                self.assertTrue(marker.exists())
+                child = int(marker.read_text())
+                if mode == 'eof':
+                    next(iter(controller.jobs.values()))['process'].stdin.close()
+                replies = self.finish(controller)
+                if mode == 'timeout':
+                    self.assertTrue(any(r.get('code') == 'clipboard-timeout' for r in replies))
+                stat = Path('/proc') / str(child) / 'stat'
+                stopped = not stat.exists() or stat.read_text().split(') ')[1][0] == 'Z'
+                if not stopped:
+                    os.kill(child, signal.SIGKILL)
+                self.assertTrue(stopped, 'clipboard helper left a running descendant')
+
     def test_invalid_request_never_launches(self):
         controller = storage.Controller()
         self.addCleanup(controller.close)

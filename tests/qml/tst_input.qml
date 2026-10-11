@@ -81,6 +81,58 @@ TestCase {
     compare(driver.actor, null)
     compare(field.text, "abc")
   }
+  function test_context_menu_paste_uses_owned_reader() {
+    field.text = "abc"; field.selectAll()
+    mouseClick(field, 20, 12, Qt.RightButton)
+    var menu = findChild(field, "boundedInputMenu")
+    tryVerify(function() { return menu.opened })
+    var paste = findChild(field, "boundedPasteAction")
+    verify(paste)
+    paste.triggered()
+    tryVerify(function() { return driver.actor === field })
+    compare(runtime.commands[runtime.commands.length - 1].command, "input.paste")
+    reply("paste")
+    compare(field.text, "paste")
+    keyClick(Qt.Key_Menu)
+    tryVerify(function() { return menu.opened })
+    menu.close(); field.forceActiveFocus()
+  }
+  function test_tab_traverses_without_inserting_and_preserves_undo() {
+    keyClick(Qt.Key_A); keyClick(Qt.Key_B)
+    keyClick(Qt.Key_Tab)
+    verify(!field.activeFocus)
+    compare(field.text, "ab")
+    keyClick(Qt.Key_Backtab)
+    tryVerify(function() { return field.activeFocus })
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "")
+  }
+  function test_rejected_native_edit_restores_selection_and_undo() {
+    keyClick(Qt.Key_A); keyClick(Qt.Key_B); keyClick(Qt.Key_C)
+    field.select(0,2)
+    var editor = findChild(field, "boundedEditor")
+    editor.insert(2, "\n")
+    compare(field.text, "abc")
+    compare(field.selectionStart, 0); compare(field.selectionEnd, 2)
+    compare(field.cursorPosition, 2)
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "")
+  }
+  function test_timeout_cancels_worker_and_keeps_text() {
+    field.text = "before"; field.cursorPosition = 6; field.paste()
+    tryVerify(function() { return field.inputError.indexOf("too long") >= 0 }, 3000)
+    compare(field.text, "before")
+    compare(runtime.commands[runtime.commands.length - 1].command, "input.cancel")
+    compare(driver.actor, null)
+  }
+  function test_limit_refusal_keeps_native_undo() {
+    for (var code of [Qt.Key_A,Qt.Key_B,Qt.Key_C,Qt.Key_D,Qt.Key_E,Qt.Key_F,Qt.Key_G,Qt.Key_H]) keyClick(code)
+    compare(field.text, "abcdefgh")
+    keyClick(Qt.Key_I)
+    compare(field.text, "abcdefgh")
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "")
+  }
   function test_long_path_scrolls_and_unicode_is_plain_text() {
     field.maximumLength = 2048
     field.text = "x".repeat(300) + "雪🍜"; field.cursorPosition = field.text.length
