@@ -1,7 +1,7 @@
 # Clipboard input verification — 0.2.1
 
 Verified on 2026-10-11. Runtime and native fixture source:
-`df50a476d2beafa05856360d167ccd283d5bdfb4`.
+`2a2725ca462fa5eff7baac209668c175c856138d`.
 
 A marketplace review identified Qt TextInput's automatic clipboard-content read
 in Apps search and both Storage fields, including hidden forms. Field-length
@@ -15,10 +15,11 @@ Invalid or oversized paste is refused whole; it never truncates a folder path.
 
 - All nine JavaScript suites passed, including input validation and reply-stream
   isolation. All 290 Linux Python tests passed, with seven existing skips.
-- Qt 6.8.2 offscreen behavior/render checks passed: 237 tests, no failures.
+- Qt 6.8.2 offscreen behavior/render checks passed: 239 tests, no failures.
   Coverage includes native typing/selection/undo, Enter, Tab/Backtab, menu and
   middle-selection paste routing, field caps, caret scrolling, rejected-edit
   selection/undo, atomic paste Undo/Redo separated from earlier/later typing,
+  original caret positions and exact text typed after Undo/Redo,
   stale replies, focus/hide/restart cancellation and timeout.
   Existing Apps checks keep kill keys away from editors and details.
 - Linux helper fixtures exercised invalid UTF-8, controls/line separators,
@@ -31,11 +32,12 @@ Invalid or oversized paste is refused whole; it never truncates a folder path.
   fields under a hidden parent. The window was active on Wayland and received
   the clipboard-change event; a foreign owner held its text pipe for 3.5 seconds
   and offered only 1024 bytes. The TextField control paused its event loop for
-  **2025 ms**; RAMen's replacements kept their 100 ms timer within **110 ms**.
+  **2047 ms**; RAMen's replacements kept their 100 ms timer within **111 ms**.
 - That native driver also passed a Japanese/emoji preedit and commit, rejection
   of an oversized input-method edit with selection/undo preserved, and invocation
-  of the custom menu's Paste through a recording transport. Append and selection
-  replacement passed Undo/Redo with earlier and later native typing retained.
+  of the custom menu's Paste through a recording transport. Append, middle
+  insertion and selection replacement passed Undo/Redo with earlier and later
+  native typing retained; the driver checks caret positions and exact text too.
   This isolates the gesture from Qt's native synchronous paste; backend budgets
   are tested above.
 - A live installed RAMen in the Omarchy VM accepted keyboard and right-click
