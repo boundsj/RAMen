@@ -19,6 +19,11 @@ Item {
   property string scopeLabel: capacity && capacity.scope ? capacity.scope : scope.path || "Selected volume"
   property var capacity: null
   property var mounts: []
+  property var folders: []
+  property var folderNext: null
+  property var folderParent: null
+  property bool choosingFolder: false
+  property bool showDetails: false
   property var snapshot: null
   property var listing: null
   property var loaded: ({})
@@ -177,6 +182,7 @@ Item {
     status = "Discovering capacity / cached snapshot"; error = ""
     send("storage.mounts", scope, "capacity")
     send("storage.cached", scope, "cached")
+    send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 12 }), "browse")
     send("storage.mounts", { offset: 0, limit: 50 }, "mounts")
   }
   function invalidateScope(code) {
@@ -202,6 +208,7 @@ Item {
     advance()
     scope = value
     if (owner.storageRememberScope) owner.storageScope = scope
+    folders = []; folderNext = null; folderParent = null; choosingFolder = false; showDetails = false
     snapshot = null; listing = null; loaded = ({}); capacity = null; crumbs = []; filter = ""
     scanning = false; reconciling = false; scanId = ""; resetNavigation()
     discover()
@@ -368,7 +375,8 @@ Item {
   function up() {
     if (!entriesReady) return
     if (memberView || showingSelf) { allEntries(); return }
-    if (!listing || !listing.node.parentId) return
+    if (!listing) { if (folderParent) changeScope({ pathBytes: folderParent }); return }
+    if (!listing.node.parentId) return
     navigate(listing.node.parentId)
   }
   function descend() { if (selected && selected.kind === "directory") navigate(selected.nodeId) }
@@ -398,7 +406,7 @@ Item {
       error = message.code + ": " + message.message
       var failure = SM.failure(message.code)
       // Volume-list discovery is independent of the selected scope.
-      if (purpose !== "mounts" && purpose !== "band" && purpose !== "action"
+      if (purpose !== "browse" && purpose !== "mounts" && purpose !== "band" && purpose !== "action"
           && !(purpose === "capacity" && (scanning || reconciling || snapshot || terminalStatus))) {
         phase = failure.state; status = failure.text
       }
@@ -421,7 +429,7 @@ Item {
           if (message.commitState === "unknown" || message.commitState === "committed") send("storage.cached", scope, "reconciled")
         }
       }
-      if (purpose !== "mounts" && failure.invalidates) invalidateScope(message.code)
+      if (purpose !== "browse" && purpose !== "mounts" && failure.invalidates) invalidateScope(message.code)
       return
     }
     if (message.type === "storage-progress") {
@@ -430,10 +438,14 @@ Item {
       status = message.status + " · " + (message.entries || 0) + " entries · unreadable " + (message.unreadable || 0) + " · excluded " + (message.excluded || 0) + " · changed " + (message.changed || 0) + (snapshot ? " · older snapshot shown" : "")
       return
     }
+    if (message.type === "storage-browse") {
+      folders = message.rows || []; folderNext = message.nextOffset; folderParent = message.parentPathBytes
+      return
+    }
     if (message.type === "storage-capacity") {
       if (purpose === "mounts") {
         if (!message.offset) mounts = []
-        mounts = mounts.concat(message.mounts || [])
+        mounts = mounts.concat((message.mounts || []).filter(function(m) { return !m.excluded && !m.error && !!m.capacity }))
         if (message.nextOffset !== null && message.nextOffset !== undefined) send("storage.mounts", { offset: message.nextOffset, limit: 50 }, "mounts")
       } else {
         if (snapshot && snapshot.identity && !SM.sameIdentity(snapshot.identity, message.identity)) {
@@ -549,8 +561,8 @@ Item {
       }
       Flow {
         width: parent.width; spacing: Style.space(6)
-        StorageButton { text: "Home"; onClicked: root.changeScope({ path: Quickshell.env("HOME") }) }
-        StorageButton { text: "Root"; onClicked: root.changeScope({ path: "/" }) }
+        StorageButton { text: "My files"; onClicked: root.changeScope({ path: Quickshell.env("HOME") }) }
+        StorageButton { text: "System"; onClicked: root.changeScope({ path: "/" }) }
         ComboBox {
           id: volumes
           width: Math.min(Style.space(180), content.width)
@@ -576,7 +588,9 @@ Item {
           onActivated: function(index) { var m = root.mounts[index]; root.changeScope({ pathBytes: m.pathBytes }) }
         }
       }
+      StorageButton { text: choosingFolder ? "Hide folder path" : "Choose a folder…"; onClicked: root.choosingFolder = !root.choosingFolder }
       Row {
+        visible: root.choosingFolder
         width: parent.width; spacing: Style.space(6)
         StorageField {
           id: pathInput
@@ -653,7 +667,26 @@ Item {
 
       // --- scoped allocation (scanned on request) --------------------------
       PanelSeparator { foreground: root.foreground }
-      StorageHeader { text: "ALLOCATION" }
+      StorageHeader { text: root.snapshot ? "WHAT’S IN THIS BOWL" : "WHAT’S FILLING YOUR BOWL?" }
+      StorageCaption { width: parent.width; visible: !root.snapshot && !root.scanning; text: "Explore a folder, or scan this one to find the big ingredients. Nothing gets deleted." }
+      Column {
+        width: parent.width; spacing: Style.space(4)
+        visible: !root.snapshot && !root.scanning && root.folders.length > 0
+        Repeater {
+          model: root.folders
+          StorageButton {
+            required property var modelData
+            width: parent.width
+            text: modelData.name + "/" + (modelData.hidden ? " · hidden" : "")
+            iconName: "next"
+            enabled: !modelData.excluded && root.helperAvailable
+            onClicked: root.changeScope({ pathBytes: modelData.pathBytes })
+          }
+        }
+        StorageButton { visible: !!root.folderParent; text: "Parent folder"; iconName: "back"; onClicked: root.changeScope({ pathBytes: root.folderParent }) }
+        StorageCaption { width: parent.width; text: "Folder names only · sizes appear after you scan" }
+        StorageButton { visible: root.folderNext !== null; text: "More folders"; onClicked: root.send("storage.browse", Object.assign({}, root.scope, { offset: root.folderNext, limit: 12 }), "browse") }
+      }
       Flow {
         width: parent.width; spacing: Style.space(4)
         visible: root.crumbs.length > 0
@@ -683,10 +716,10 @@ Item {
       }
       Flow {
         width: parent.width; spacing: Style.space(6)
-        StorageButton { text: root.snapshot ? "Rescan" : "Scan"; primary: true; enabled: root.entriesReady; onClicked: root.scan() }
-        StorageButton { text: "Cancel"; enabled: root.scanning && !!root.scanId && !root.reconciling; onClicked: root.cancel() }
-        StorageButton { text: "Reload cache"; enabled: root.helperAvailable && !root.scanning && !root.reconciling; onClicked: root.reloadCache() }
-        StorageButton { text: "Up"; enabled: root.entriesReady && !!root.listing && !!root.listing.node.parentId; onClicked: root.up() }
+        StorageButton { text: root.snapshot ? "Rescan" : "Scan this folder"; primary: true; enabled: root.entriesReady; onClicked: root.scan() }
+        StorageButton { text: "Cancel"; visible: root.scanning; enabled: root.scanning && !!root.scanId && !root.reconciling; onClicked: root.cancel() }
+        StorageButton { text: "Reload cache"; visible: !!root.snapshot || root.phase === "helper-failed" || root.phase === "cache-invalid"; enabled: root.helperAvailable && !root.scanning && !root.reconciling; onClicked: root.reloadCache() }
+        StorageButton { text: "Up"; visible: !!root.listing && !!root.listing.node.parentId; enabled: root.entriesReady && !!root.listing && !!root.listing.node.parentId; onClicked: root.up() }
       }
       // State badge, activity and the backend's own status words.
       Row {
@@ -716,7 +749,8 @@ Item {
           text: root.queryPending ? "Loading entries · previous rows unavailable for interaction" : root.status
         }
       }
-      StorageCaption { width: parent.width; visible: !!root.error; color: root.ink.warn; text: root.error }
+      StorageButton { visible: !!root.error; text: root.showDetails ? "Hide technical details" : "Technical details"; onClicked: root.showDetails = !root.showDetails }
+      StorageCaption { width: parent.width; visible: !!root.error && root.showDetails; color: root.ink.warn; text: root.error }
       Item {
         width: parent.width; height: visible ? root.bandRows * Style.space(28) : 0
         visible: !!root.listing && !!root.owner && root.owner.storageShowMap && !root.filter && root.bandRows > 0
@@ -759,6 +793,7 @@ Item {
         }
       }
       StorageField {
+        visible: !!root.listing
         id: filterInput; maximumLength: 128; objectName: "storageFilterInput"; width: parent.width
         placeholderText: "Filter this folder (literal name substring)"
         leftPadding: Style.space(8) + filterIcon.width + Style.space(6)
@@ -774,6 +809,7 @@ Item {
       // Ledger column headers: names, then right-aligned numbers.
       Item {
         id: ledgerHeader
+        visible: !!root.listing
         width: parent.width; height: nameHeader.implicitHeight
         readonly property real shareWidth: Style.space(44)
         readonly property real sizeWidth: Style.space(92)
@@ -837,6 +873,7 @@ Item {
       }
       StorageCaption { visible: !!root.listing && root.listing.total === 0; text: "No matching entries; folder self allocation remains above." }
       Flow {
+        visible: !!root.listing
         width: parent.width; spacing: Style.space(6)
         StorageButton { text: "Previous rows"; iconName: "back"; enabled: !root.memberView && root.entriesReady && root.pageOffsets.length > 0; onClicked: { var offsets = root.pageOffsets.slice(); var offset = offsets.pop(); root.pageOffsets = offsets; root.page(offset) } }
         StorageButton { text: "Next rows"; iconName: "next"; enabled: !root.memberView && root.entriesReady && !!root.listing && root.listing.nextOffset !== null; onClicked: { root.pageOffsets = root.pageOffsets.concat([root.listing.offset]); root.page(root.listing.nextOffset) } }
@@ -848,13 +885,14 @@ Item {
         StorageButton { text: "Other members"; enabled: root.entriesReady && !!root.listing && !!root.listing.other; onClicked: { root.pageOffsets = root.pageOffsets.concat([root.listing.offset]); root.page(root.listing.other.offset) } }
       }
       Flow {
+        visible: !!root.selected
         width: parent.width; spacing: Style.space(6)
         StorageButton { text: "Descend"; enabled: root.entriesReady && !!root.selected && root.selected.kind === "directory"; onClicked: root.descend() }
         StorageButton { text: "Open directory / parent"; enabled: root.entriesReady && !!root.selected && root.selected.actionIdentity !== false; onClicked: root.action("open") }
         StorageButton { text: "Copy path"; enabled: root.entriesReady && !!root.selected && root.selected.actionIdentity !== false && root.selected.copyRepresentable !== false; onClicked: root.action("copy") }
       }
       StorageCaption { width: parent.width; visible: !!root.selected && (root.selected.actionIdentity === false || root.selected.copyRepresentable === false); color: root.ink.warn; text: root.selected && root.selected.actionIdentity === false ? "Legacy snapshot: rescan to enable validated path actions." : "This path contains non-UTF8 bytes; clipboard text cannot represent it. Browse and open-parent still use byte identity." }
-      StorageCaption { width: parent.width; text: "Allocation is scoped metadata, separate from filesystem capacity. It does not predict space freed. No file is executed." }
+      StorageCaption { width: parent.width; visible: !!root.listing; text: "Folder sizes are allocated space, not a promise of space freed. Shared data and skipped entries can differ from drive usage." }
     }
   }
 }

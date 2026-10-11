@@ -31,6 +31,12 @@ function failure(code) {
     return { state: "cache-invalid", invalidates: true, text: "Cached snapshot unavailable — reload the selected cache or scan explicitly" }
   if (code === "stale-snapshot")
     return { state: "cache-invalid", invalidates: true, text: "Cached snapshot expired or exceeds limits — scan explicitly" }
+  if (code === "cache-size-limit")
+    return { state: "limited", invalidates: false, text: "The scan cache is full — your drive is not. Try a smaller folder for now." }
+  if (code === "scan-time-limit")
+    return { state: "limited", invalidates: false, text: "This bowl needs more time — try exploring one folder at a time." }
+  if (code === "scan-entry-limit")
+    return { state: "limited", invalidates: false, text: "A big bowl of files! Explore a folder below to start smaller." }
   if (/limit$/.test(code))
     return { state: "limited", invalidates: false, text: "Storage limit reached — choose a narrower folder" }
   if (["worker-failed", "worker-timeout", "storage-unavailable", "owner-timeout"].indexOf(code) >= 0)
@@ -113,7 +119,7 @@ function accept(s, message) {
   if (message.type === "storage-action" && (message.snapshotId !== entry.args.snapshotId
       || message.nodeId !== entry.args.nodeId || message.action !== entry.args.action)) return null
   if (message.type !== "error" && message.type !== "storage-progress") {
-    var expected = { "storage.mounts": "storage-capacity", "storage.children": "storage-children", "storage.action": "storage-action" }[entry.command] || "storage-result"
+    var expected = { "storage.browse": "storage-browse", "storage.mounts": "storage-capacity", "storage.children": "storage-children", "storage.action": "storage-action" }[entry.command] || "storage-result"
     if (message.type !== expected) return null
   }
   var next = Object.assign({}, s, { pending: Object.assign({}, s.pending) })

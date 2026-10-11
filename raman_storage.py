@@ -280,6 +280,59 @@ def capacities(command, base=None):
                 raise
 
 
+
+def browse(command, base=None):
+    """Page directory names without recursion or pretending names have sizes."""
+    path = unpack_path(command.get("path"))
+    mounts = read_mounts()
+    ident = identity(path, mounts)
+    offset = integer(command, "offset", 0, 0, 10_000_000)
+    limit = integer(command, "limit", 20, 1, MAX_ROWS)
+    rows, positions, cursor, more = [], [], 0, False
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        if (os.fstat(fd).st_dev, os.fstat(fd).st_ino) != (ident["device"], ident["inode"]) or fd_mount_id(fd) != ident["mountId"]:
+            raise StorageError("root-changed", "folder changed before browsing")
+        with os.scandir(fd) as entries:
+            for entry in entries:
+                cursor += 1
+                if cursor <= offset:
+                    continue
+                if len(rows) >= limit:
+                    more = True
+                    cursor -= 1
+                    break
+                try:
+                    if not entry.is_dir(follow_symlinks=False):
+                        continue
+                except OSError:
+                    continue
+                child = os.path.join(path, os.fsencode(entry.name))
+                positions.append(cursor)
+                rows.append(dict(name=display(os.fsencode(entry.name)),
+                                 pathBytes=base64.b64encode(child).decode("ascii"),
+                                 hidden=os.fsencode(entry.name).startswith(b"."),
+                                 excluded=exclusion(mount_for(child, mounts))))
+        if identity(path) != ident:
+            raise StorageError("root-changed", "folder changed during browsing")
+    finally:
+        os.close(fd)
+    result = dict(scope=display(path), identity=ident, rows=rows, offset=offset,
+                  parentPathBytes=base64.b64encode(os.path.dirname(path)).decode("ascii") if path != b"/" else None,
+                  nextOffset=cursor if more else None, measured=False)
+    while True:
+        try:
+            wire(dict(base or envelope(command, "storage-browse"), **result))
+            return result
+        except StorageError as exc:
+            if exc.code != "too-large" or len(rows) <= 1:
+                raise
+            rows.pop()
+            positions.pop()
+            result["nextOffset"] = positions[-1]
+
+
+
 def integer(command, name, default, low, high):
     value = command.get(name, default)
     if type(value) is not int or not low <= value <= high:
@@ -1165,7 +1218,11 @@ def worker_main():
 
     try:
         name = command["command"]
-        if name == "storage.mounts":
+        if name == "storage.browse":
+            base = envelope(command, "storage-browse")
+            sys.stdout.buffer.write(wire(dict(base, **browse(command, base))))
+            sys.stdout.buffer.flush()
+        elif name == "storage.mounts":
             base = envelope(command, "storage-capacity")
             sys.stdout.buffer.write(wire(dict(base, **capacities(command, base))))
             sys.stdout.buffer.flush()
@@ -1241,7 +1298,7 @@ class Controller:
     def handle(self, command):
         request_id = command.get("requestId")
         name = command.get("command")
-        allowed = {"storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
+        allowed = {"storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
         if name not in allowed:
             return error(request_id, "unknown-command", "unknown storage command")
         client = command.get("clientId")
