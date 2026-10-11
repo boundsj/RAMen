@@ -54,6 +54,44 @@ TestCase {
     compare(field.text, "a雪🍜c")
     verify(field.inputError.length > 0)
   }
+  function test_paste_undo_redo_boundaries_data() {
+    return [
+      {tag: "append", start: 3, end: 3, paste: "XY", expected: "abcXY"},
+      {tag: "replace", start: 1, end: 2, paste: "XY", expected: "aXYc"},
+      {tag: "backward-selection", start: 2, end: 1, paste: "XY", expected: "aXYc"},
+      {tag: "unicode", start: 1, end: 2, paste: "雪🍜", expected: "a雪🍜c"},
+      {tag: "delete-selection", start: 1, end: 2, paste: "", expected: "ac"}
+    ]
+  }
+  function test_paste_undo_redo_boundaries(data) {
+    keyClick(Qt.Key_A); keyClick(Qt.Key_B); keyClick(Qt.Key_C)
+    field.select(data.start, data.end)
+    field.paste(); reply(data.paste)
+    compare(field.text, data.expected)
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "abc", "one Undo restores the entire pre-paste text")
+    keyClick(Qt.Key_Z, Qt.ControlModifier | Qt.ShiftModifier)
+    compare(field.text, data.expected, "one Redo reapplies the complete paste")
+    keyClick(Qt.Key_D)
+    compare(field.text.length, data.expected.length + 1)
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, data.expected, "typing after paste has its own undo boundary")
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "abc")
+    keyClick(Qt.Key_Z, Qt.ControlModifier)
+    compare(field.text, "", "typing before paste retains its native undo history")
+  }
+  function test_paste_into_empty_field_and_noop_keep_undo() {
+    field.paste(); reply("XY")
+    keyClick(Qt.Key_A)
+    compare(field.text, "XYa")
+    field.undo()
+    compare(field.text, "XY")
+    field.undo(); compare(field.text, "")
+    field.redo(); compare(field.text, "XY")
+    field.selectAll(); field.paste(); reply("XY")
+    field.undo(); compare(field.text, "", "an unchanged replacement does not add an undo step")
+  }
   function test_late_reply_cannot_edit_changed_or_hidden_field() {
     field.text = "a"; field.cursorPosition = 1
     field.paste(); var old = runtime.commands[0]

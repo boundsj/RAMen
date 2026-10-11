@@ -60,7 +60,9 @@ def check(stage, name, source, ime=False):
             subprocess.run(['wl-copy', '--clear'], timeout=2, check=False)
     text = log.read_text()
     beats = [int(n) for n in re.findall(r'BEAT (\d+)', text)]
-    if len(beats) < 5 or 'CHANGED' not in text or ime and ('IME AND REJECTED-EDIT UNDO OK' not in text or 'MENU OK' not in text):
+    if len(beats) < 5 or 'CHANGED' not in text or ime and (
+            'IME AND REJECTED-EDIT UNDO OK' not in text or 'MENU OK' not in text
+            or 'PASTE UNDO/REDO OK' not in text):
         raise RuntimeError('native coverage incomplete: ' + text)
     return dict(maxGapMs=max(b - a for a, b in zip(beats, beats[1:])), ime=ime,
                 platform=re.search(r'PLATFORM (.+)', text)[1])

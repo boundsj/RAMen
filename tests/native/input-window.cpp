@@ -53,9 +53,38 @@ int main(int argc, char **argv) {
             if (!menu || !menu->property("opened").toBool() || !paste) { app.exit(8); return; }
             QMetaObject::invokeMethod(paste, "triggered");
             QTimer::singleShot(150, [&]() {
+                auto *field = view.rootObject()->findChild<QObject *>("testedField");
                 auto *clipboard = view.rootObject()->findChild<QObject *>("nativeClipboard");
                 if (!clipboard || clipboard->property("requests").toInt() != 1) { app.exit(9); return; }
-                std::fprintf(stderr, "MENU OK\n"); std::fflush(stderr);
+                std::fprintf(stderr, "MENU OK\n");
+                auto type = [&](Qt::Key key, const QString &text) {
+                    QKeyEvent press(QEvent::KeyPress, key, Qt::NoModifier, text);
+                    QKeyEvent release(QEvent::KeyRelease, key, Qt::NoModifier, text);
+                    QCoreApplication::sendEvent(&view, &press);
+                    QCoreApplication::sendEvent(&view, &release);
+                };
+                for (bool replacement : {false, true}) {
+                    field->setProperty("text", "");
+                    type(Qt::Key_A, "a"); type(Qt::Key_B, "b"); type(Qt::Key_C, "c");
+                    const int start = replacement ? 1 : 3, end = replacement ? 2 : 3;
+                    QMetaObject::invokeMethod(field, "select", Q_ARG(QVariant, start), Q_ARG(QVariant, end));
+                    QMetaObject::invokeMethod(field, "paste");
+                    QMetaObject::invokeMethod(field, "receivePaste", Q_ARG(QVariant, QVariant::fromValue(field)),
+                                              Q_ARG(QVariant, "XY"), Q_ARG(QVariant, ""));
+                    const QString pasted = replacement ? "aXYc" : "abcXY";
+                    if (field->property("text").toString() != pasted) { app.exit(10); return; }
+                    QMetaObject::invokeMethod(field, "undo");
+                    if (field->property("text").toString() != "abc") { app.exit(11); return; }
+                    QMetaObject::invokeMethod(field, "redo");
+                    if (field->property("text").toString() != pasted) { app.exit(12); return; }
+                    type(Qt::Key_D, "d");
+                    QMetaObject::invokeMethod(field, "undo");
+                    if (field->property("text").toString() != pasted) { app.exit(13); return; }
+                    QMetaObject::invokeMethod(field, "undo");
+                    QMetaObject::invokeMethod(field, "undo");
+                    if (!field->property("text").toString().isEmpty()) { app.exit(14); return; }
+                }
+                std::fprintf(stderr, "PASTE UNDO/REDO OK\n"); std::fflush(stderr);
             });
         }
         std::fflush(stderr);
