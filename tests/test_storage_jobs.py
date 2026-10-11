@@ -2,8 +2,10 @@
 import base64
 from pathlib import Path
 import os
+import signal
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -109,3 +111,170 @@ class JobTests(unittest.TestCase):
         self.assertEqual(result['total'], 11)
         self.assertEqual(result['nextOffset'], 3)
         self.assertLess(len(S.wire(result)), S.MAX_LINE_BYTES)
+
+    def test_cache_budget_applies_to_every_worker_and_preserves_checkpoint(self):
+        for i in range(500):
+            (self.scope / ('f%04d-' % i + 'x' * 180)).touch()
+        with patch.object(J, 'MAX_JOB_BYTES', 65536):
+            self.start()
+            saved = self.step(2)
+            paused = self.step(500)
+            self.assertEqual(paused['pauseReason'], 'cache-budget')
+            self.assertEqual(paused['entries'], saved['entries'])
+            self.assertLessEqual(self.cache.safe_stat('job-' + self.job_id + '.sqlite').st_size, 65536)
+            self.assertEqual(J.cached(dict(jobId=self.job_id), self.cache)['snapshot']['entries'], saved['entries'])
+            self.assertEqual(J.children(dict(jobId=self.job_id), self.cache)['total'], 2)
+
+    def test_interrupted_eviction_is_recovered_by_next_writer(self):
+        first = self.start()['snapshotId']
+        self.start()
+        unlink = os.unlink
+        def interrupt(name, **kwargs):
+            if name == 'job-' + first + '.sqlite':
+                raise OSError('injected eviction interruption')
+            return unlink(name, **kwargs)
+        with patch.object(J.os, 'unlink', side_effect=interrupt):
+            with self.assertRaises(OSError):
+                self.start()
+        self.assertTrue((self.base / 'raman/storage' / ('job-' + first + '.sqlite')).exists())
+        self.start()
+        files = list((self.base / 'raman/storage').glob('job-*.sqlite'))
+        self.assertEqual(len(files), 2)
+        self.assertFalse(any(first in f.name for f in files))
+
+    def test_unicode_payload_shrinks_without_losing_pagination(self):
+        parent = self.scope
+        for i in range(24):
+            parent = parent / ('%02d' % i + '\U0001f35c' * 28)
+            parent.mkdir()
+        for i in range(65):
+            (parent / ('%02d' % i + '\U0001f35c' * 60)).touch()
+        self.start(); self.ready()
+        node = J.nid(1)
+        for _ in range(24):
+            node = J.children(dict(jobId=self.job_id, nodeId=node), self.cache)['rows'][0]['nodeId']
+        command = dict(jobId=self.job_id, nodeId=node, requestId='\U0001f35c'*64, clientId='\U0001f35c'*64, generation=2**53-1)
+        with patch.object(S, 'MAX_LINE_BYTES', 65536):
+            result = J.children(command, self.cache)
+            self.assertLessEqual(len(S.wire(dict(S.envelope(command, 'storage-children'), **result))), S.MAX_LINE_BYTES)
+        self.assertEqual(result['nextOffset'], len(result['rows']))
+        self.assertLess(len(result['segments']), S.MAX_SEGMENTS - 1)
+        next_page = J.children(dict(command, offset=result['nextOffset']), self.cache)
+        self.assertFalse({r['nodeId'] for r in result['rows']} & {r['nodeId'] for r in next_page['rows']})
+        self.assertEqual(len(result['rows']) + len(next_page['rows']), 65)
+
+    def test_scoped_cache_searches_both_retained_jobs(self):
+        first = self.start()['snapshotId']
+        other = self.base / 'other'; other.mkdir()
+        J.start(dict(path=str(other)), self.cache)
+        self.assertEqual(J.cached(dict(path=str(self.scope)), self.cache)['snapshot']['snapshotId'], first)
+
+    def test_cache_symlink_sidecar_is_rejected(self):
+        self.start()
+        os.symlink(self.scope / 'unrelated', self.cache.path('job-' + self.job_id + '.sqlite-wal'))
+        with self.assertRaises(S.StorageError) as caught:
+            J.cached(dict(jobId=self.job_id), self.cache)
+        self.assertEqual(caught.exception.code, 'unsafe-cache')
+
+    def pump(self, controller, predicate, seconds=5):
+        replies = []
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            replies.extend(controller.poll())
+            if predicate(replies):
+                return replies
+            time.sleep(0.005)
+        self.fail('owned worker did not reach expected condition')
+
+    def test_failed_job_action_reaps_helper_descendants(self):
+        self.start()
+        self.ready()
+        marker = self.base / 'helper-pid'
+        helper = self.base / 'wl-copy'
+        helper.write_text('#!/usr/bin/env python3\nimport os,time\n'
+                          'if os.fork()==0:\n open(%r,"w").write(str(os.getpid()));time.sleep(30)\n'
+                          'time.sleep(0.1)\nraise SystemExit(7)\n' % str(marker))
+        helper.chmod(0o700)
+        with patch.dict(os.environ, XDG_CACHE_HOME=str(self.base), PATH=str(self.base) + ':' + os.environ['PATH']):
+            controller = S.Controller()
+            self.addCleanup(controller.close)
+            controller.handle(dict(command='storage.job.action', jobId=self.job_id, nodeId=J.nid(1),
+                                   action='copy', requestId='action', clientId='test', generation=1))
+            replies = self.pump(controller, lambda r: any(m.get('type') == 'error' for m in r) and not controller.jobs)
+        self.assertTrue(any(m.get('code') == 'action-unavailable' for m in replies))
+        child = int(marker.read_text())
+        def stopped():
+            try:
+                return Path('/proc/%d/stat' % child).read_text().split(') ')[1].startswith('Z')
+            except FileNotFoundError:
+                return True
+        deadline = time.monotonic() + 2
+        while not stopped() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        if not stopped():
+            os.kill(child, signal.SIGKILL)
+            self.fail('failed clipboard helper left a running descendant')
+
+    def test_owner_close_rolls_back_inflight_slice_and_keeps_checkpoint(self):
+        for i in range(20):
+            (self.scope / str(i)).touch()
+        self.start(); saved = self.step()
+        os.close(self.cache.lock_fd); self.cache.lock_fd = None
+        marker = self.base / 'worker-started'
+        source = '''import contextlib,time,raman_storage as s,raman_storage_jobs as j
+original=j.directory_entries
+@contextlib.contextmanager
+def blocked(fd,cookie):
+ with original(fd,cookie) as entries:
+  def slow():
+   for i,entry in enumerate(entries):
+    if i==2:
+     open(%r,'w').write('started');time.sleep(30)
+    yield entry
+  yield slow()
+j.directory_entries=blocked
+s.worker_main()
+''' % str(marker)
+        with patch.dict(os.environ, XDG_CACHE_HOME=str(self.base)):
+            controller = S.Controller([sys.executable, '-S', '-c', source])
+            controller.handle(dict(command='storage.step', jobId=self.job_id, requestId='step', clientId='test', generation=1))
+            self.pump(controller, lambda _: marker.exists())
+            processes = [job['process'] for job in controller.jobs.values()]
+            controller.close()
+        self.assertTrue(all(p.poll() is not None for p in processes))
+        checkpoint = J.cached(dict(jobId=self.job_id), self.cache)['snapshot']
+        self.assertEqual(checkpoint['entries'], saved['entries'])
+        self.assertEqual(self.ready()['entries'], 21)
+
+
+class MainStorageTests(unittest.TestCase):
+    def plan(self, records, primary):
+        mounts = [dict(id=i, point=os.fsencode(path), root=base64.b64decode(record['mountRoot']),
+                       type='btrfs', source=b'/dev/test', device='0:1')
+                  for i, (path, record) in enumerate(records.items())]
+        def record(path, _):
+            return primary if path == b'/home/test' else records[os.fsdecode(path)]
+        with patch.object(S, 'read_mounts', return_value=mounts), patch.object(J, 'root_record', side_effect=record), patch.object(S, 'capacities', return_value=dict(totalBytes=123)) as capacity:
+            result = J.location_plan('/home/test')
+            capacity.assert_called_once()
+            return result
+
+    def record(self, path, subvolume, root='/', snapshot=False, pool='primary'):
+        return dict(path=path, pathBytes=J.encoded(os.fsencode(path)), identity=dict(filesystemId=subvolume),
+                    pool=[pool], domain=[pool, subvolume], snapshot=snapshot, mountRoot=J.encoded(os.fsencode(root)))
+
+    def test_primary_btrfs_subvolumes_share_capacity_and_skip_aliases_snapshots_other_drives(self):
+        records = {'/': self.record('/', 1), '/home': self.record('/home', 2),
+                   '/alias': self.record('/alias', 2, '/test'),
+                   '/snapshot': self.record('/snapshot', 3, snapshot=True),
+                   '/other': self.record('/other', 4, pool='other')}
+        result = self.plan(records, records['/home'])
+        self.assertEqual({r['path'] for r in result['roots']}, {'/', '/home'})
+        self.assertEqual(result['skipped'], [dict(path='/snapshot', reason='snapshot')])
+        self.assertEqual(result['capacity']['totalBytes'], 123)
+
+    def test_snapshot_only_fallback_is_refused(self):
+        record = self.record('/snapshot', 1, snapshot=True)
+        with self.assertRaises(S.StorageError) as caught:
+            self.plan({'/snapshot': record}, record)
+        self.assertEqual(caught.exception.code, 'no-eligible-roots')

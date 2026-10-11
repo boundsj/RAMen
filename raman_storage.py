@@ -1280,7 +1280,7 @@ def worker_main():
             scanner.close()
         if cache is not None:
             cache.close()
-        if command["command"] == "storage.action" and not action_complete and os.getpgrp() == os.getpid():
+        if command["command"] in ("storage.action", "storage.job.action") and not action_complete and os.getpgrp() == os.getpid():
             # Failed/timed-out launcher leaders can leave children behind. The
             # error is flushed first; no successful desktop handoff is revoked.
             os.killpg(os.getpid(), signal.SIGKILL)

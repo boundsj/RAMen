@@ -11,6 +11,7 @@ import errno
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import stat
 import sys
@@ -87,6 +88,8 @@ def location_plan(home=None):
             raise S.StorageError('mount-limit', 'Main storage has too many mounted roots; choose a folder')
         candidates.append(record)
     if not candidates:
+        if primary['snapshot']:
+            raise S.StorageError('no-eligible-roots', 'Main storage contains only snapshots; choose a folder instead')
         candidates = [primary]
     return dict(label='Main storage', roots=candidates, skipped=skipped[:S.MAX_WARNINGS],
                 capacityPathBytes=encoded(home), capacity=S.capacities(dict(path=os.fsdecode(home))),
@@ -106,12 +109,50 @@ def number(value):
     return result
 
 
+def catalog_ids(cache, missing=False):
+    try:
+        catalog = cache.read_json('jobs.json')
+    except FileNotFoundError:
+        if missing:
+            return []
+        raise
+    ids = catalog.get('ids') if isinstance(catalog, dict) else None
+    if not isinstance(ids, list) or not 1 <= len(ids) <= 2 or any(not isinstance(i, str) or not S.ID_RE.fullmatch(i) for i in ids) or len(set(ids)) != len(ids):
+        raise S.StorageError('invalid-snapshot', 'invalid Storage job catalog')
+    return ids
+
+
+def recover_jobs(cache, ids):
+    """Under the writer lease, remove only RAMen's unreferenced job artifacts.
+
+    Publication precedes eviction: interruption can leave a third inventory or
+    an unpublished candidate. The next writer recovers both deterministically.
+    """
+    for name in os.listdir(cache.fd):
+        match = re.fullmatch(r'job-([0-9a-f]{32})\.sqlite(?:-wal|-shm|-journal)?', name)
+        temporary = re.fullmatch(r'\.jobs-[0-9a-f]{32}\.tmp', name)
+        if (match and match[1] not in ids) or temporary:
+            cache.safe_stat(name)
+            os.unlink(name, dir_fd=cache.fd)
+    os.fsync(cache.fd)
+
+
+def connection_limits(db):
+    # max_page_count is a connection setting, not persistent database metadata.
+    page_size = db.execute('PRAGMA page_size').fetchone()[0]
+    db.execute('PRAGMA max_page_count=%d' % (MAX_JOB_BYTES // page_size))
+    db.execute('PRAGMA cache_size=-2048')
+    db.execute('PRAGMA temp_store=MEMORY')
+    db.execute('PRAGMA synchronous=FULL')
+
+
 @contextlib.contextmanager
 def inventory(cache, job_id=None, write=False):
-    catalog = cache.read_json('jobs.json')
-    ids = catalog.get('ids') if isinstance(catalog, dict) else None
-    if not isinstance(ids, list) or not 1 <= len(ids) <= 2 or any(not isinstance(i, str) or not S.ID_RE.fullmatch(i) for i in ids):
-        raise S.StorageError('invalid-snapshot', 'invalid Storage job catalog')
+    if write:
+        cache.writer()
+    ids = catalog_ids(cache)
+    if write:
+        recover_jobs(cache, ids)
     job_id = ids[0] if job_id is None else job_id
     if job_id not in ids:
         raise S.StorageError('snapshot-not-active', 'this Storage job was replaced')
@@ -119,16 +160,24 @@ def inventory(cache, job_id=None, write=False):
     info = cache.safe_stat(name)
     if info.st_size > MAX_JOB_BYTES:
         raise S.StorageError('invalid-snapshot', 'Storage job exceeds its cache budget')
-    if write:
-        cache.writer()
+    for suffix in ('-wal', '-shm', '-journal'):
+        try:
+            cache.safe_stat(name + suffix)
+        except FileNotFoundError:
+            pass
     db = sqlite3.connect('file:' + cache.path(name) + ('?mode=rw' if write else '?mode=ro'), uri=True, timeout=0.1)
     db.row_factory = sqlite3.Row
     try:
         if db.execute('PRAGMA user_version').fetchone()[0] != JOB_SCHEMA:
             raise S.StorageError('invalid-snapshot', 'unsupported Storage job schema')
+        if write:
+            connection_limits(db)
         if not write:
             db.execute('BEGIN')
-        meta = json.loads(db.execute("SELECT value FROM metadata WHERE key='job'").fetchone()[0])
+        raw = db.execute("SELECT substr(value,1,65537),length(value) FROM metadata WHERE key='job'").fetchone()
+        if raw is None or raw[1] > 65536:
+            raise S.StorageError('invalid-snapshot', 'invalid or oversized Storage job metadata')
+        meta = json.loads(raw[0])
         if meta['snapshotId'] != job_id or not isinstance(meta['roots'], list) or not 1 <= len(meta['roots']) <= MAX_ROOTS:
             raise S.StorageError('invalid-snapshot', 'invalid Storage job identity')
         for root in meta['roots']:
@@ -150,11 +199,16 @@ def metadata(db, meta):
 
 
 def save_metadata(db, meta):
-    db.execute("UPDATE metadata SET value=? WHERE key='job'", (json.dumps(meta),))
+    value = json.dumps(meta)
+    if len(value.encode('utf-8')) > 65536:
+        raise S.StorageError('too-large', 'Storage scope metadata is too large; choose a folder')
+    db.execute("UPDATE metadata SET value=? WHERE key='job'", (value,))
 
 
 def start(command, cache):
     cache.writer()
+    prior = catalog_ids(cache, missing=True)
+    recover_jobs(cache, prior)
     path = S.unpack_path(command.get('path'))
     if command.get('kind') == 'main':
         plan = location_plan(os.fsdecode(path))
@@ -183,7 +237,7 @@ def start(command, cache):
             CREATE TABLE metadata(key TEXT PRIMARY KEY,value TEXT NOT NULL);
         ''')
         db.execute('PRAGMA user_version=%d' % JOB_SCHEMA)
-        db.execute('PRAGMA max_page_count=%d' % (MAX_JOB_BYTES // 4096))
+        connection_limits(db)
         virtual = len(roots) > 1
         if virtual:
             db.execute('INSERT INTO nodes VALUES(1,NULL,0,?,1,0,0,0,0,1,\'\',0,?,NULL,NULL,NULL)', (label.encode(), label.casefold()))
@@ -206,7 +260,8 @@ def start(command, cache):
                     capturedAt=time.time(), updatedAt=time.time(), status='paused',
                     allocationMethod='st_blocks*512', skipped=plan['skipped'], scopeNote=plan['note'],
                     elapsedSeconds=0, unreadable=0, excluded=0, changed=0, pauseReason='', currentFolder='')
-        db.execute("INSERT INTO metadata VALUES('job',?)", (json.dumps(meta),))
+        db.execute("INSERT INTO metadata VALUES('job','{}')")
+        save_metadata(db, meta)
         db.commit()
         result = metadata(db, meta)
     except BaseException:
@@ -215,18 +270,12 @@ def start(command, cache):
         raise
     else:
         db.close()
-    try:
-        prior = cache.read_json('jobs.json')['ids']
-    except FileNotFoundError:
-        prior = []
     ids = [job_id] + prior[:1]
     temp = '.jobs-' + job_id + '.tmp'
     cache.write_json(temp, dict(ids=ids))
     os.replace(temp, 'jobs.json', src_dir_fd=cache.fd, dst_dir_fd=cache.fd)
     os.fsync(cache.fd)
-    for old in prior[1:]:
-        if isinstance(old, str) and S.ID_RE.fullmatch(old):
-            os.unlink('job-' + old + '.sqlite', dir_fd=cache.fd)
+    recover_jobs(cache, ids)
     return dict(status='paused', snapshot=result, snapshotId=job_id)
 
 
@@ -435,21 +484,34 @@ def step(command, cache, limits=None):
             meta.update(status='paused', pauseReason=exc.code)
             save_metadata(db, meta)
             db.commit()
-        except sqlite3.Error:
+        except sqlite3.Error as exc:
             db.rollback()
-            raise
+            if getattr(exc, 'sqlite_errorcode', None) != sqlite3.SQLITE_FULL:
+                raise
+            # The failed slice is rolled back; the previous checkpoint remains
+            # browsable. Save the pause when there is room even on a full disk.
+            meta = json.loads(db.execute("SELECT value FROM metadata WHERE key='job'").fetchone()[0])
+            meta.update(status='paused', pauseReason='cache-budget')
+            try:
+                save_metadata(db, meta)
+                db.commit()
+            except sqlite3.Error:
+                db.rollback()
         return dict(status=meta['status'], snapshot=metadata(db, meta))
 
 
 def cached(command, cache):
     try:
-        with inventory(cache, command.get('jobId')) as (db, meta):
-            scope = S.unpack_path(command.get('path')) if command.get('path') else None
-            if scope and (base64.b64decode(meta['scopeBytes']) != scope or meta['kind'] != command.get('kind', 'folder')):
-                return dict(status='unscanned', snapshot=None)
-            return dict(status=meta['status'], snapshot=metadata(db, meta))
+        ids = catalog_ids(cache)
     except FileNotFoundError:
         return dict(status='unscanned', snapshot=None)
+    scope = S.unpack_path(command.get('path')) if command.get('path') else None
+    for job_id in [command['jobId']] if command.get('jobId') else ids:
+        with inventory(cache, job_id) as (db, meta):
+            if scope and (base64.b64decode(meta['scopeBytes']) != scope or meta['kind'] != command.get('kind', 'folder')):
+                continue
+            return dict(status=meta['status'], snapshot=metadata(db, meta))
+    return dict(status='unscanned', snapshot=None)
 
 
 def row(db, node, meta):
@@ -483,10 +545,26 @@ def children(command, cache):
                       offset=offset, total=count, nextOffset=offset + len(rows) if offset + len(rows) < count else None,
                       filter=text, childrenKnownAllocatedBytes=total, activationDurability='durable',
                       breadcrumbs=[dict(nodeId=nid(r['id']), name=S.display(r['name'])) for r in chain(db, node_id)])
-        result['other'] = dict(kind='other', count=count-len(segments), offset=len(segments), filter=text,
-                               knownAllocatedBytes=total-sum(r['knownAllocatedBytes'] for r in segments),
-                               coverage='partial' if incomplete else 'complete') if count > len(segments) else None
-        return result
+        while True:
+            selected = result['segments']
+            remaining = total - sum(r['knownAllocatedBytes'] for r in selected)
+            partial = incomplete - sum(r['coverage'] == 'partial' for r in selected)
+            result['other'] = dict(kind='other', count=count-len(selected), offset=len(selected), filter=text,
+                                   knownAllocatedBytes=remaining, allocatedBytes=None if partial else remaining,
+                                   coverage='partial' if partial else 'complete') if count > len(selected) else None
+            result['nextOffset'] = offset + len(result['rows']) if offset + len(result['rows']) < count else None
+            try:
+                S.wire(dict(S.envelope(command, 'storage-children'), _validated=cache.validated, **result))
+                return result
+            except S.StorageError as exc:
+                if exc.code != 'too-large':
+                    raise
+                if len(result['segments']) > 1:
+                    result['segments'].pop()
+                elif len(result['rows']) > 1:
+                    result['rows'].pop()
+                else:
+                    raise
 
 
 def action(command, cache):
