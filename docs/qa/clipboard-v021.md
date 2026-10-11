@@ -1,7 +1,7 @@
 # Clipboard input verification — 0.2.1
 
 Verified on 2026-10-11. Runtime and native fixture source:
-`dbcccb3b4bb965fc4a22c87f9a32ab89af212432`.
+`2427faaee1b741371fab2a8feb96c712c5c0aef9`.
 
 A marketplace review identified Qt TextInput's automatic clipboard-content read
 in Apps search and both Storage fields, including hidden forms. Field-length
@@ -15,7 +15,7 @@ Invalid or oversized paste is refused whole; it never truncates a folder path.
 
 - All nine JavaScript suites passed, including input validation and reply-stream
   isolation. All 290 Linux Python tests passed, with seven existing skips.
-- Qt 6.8.2 offscreen behavior/render checks passed: 230 tests, no failures.
+- Qt 6.8.2 offscreen behavior/render checks passed: 231 tests, no failures.
   Coverage includes native typing/selection/undo, Enter, Tab/Backtab, menu and
   middle-selection paste routing, field caps, caret scrolling, rejected-edit
   selection/undo, stale replies, focus/hide/restart cancellation and timeout.
@@ -30,7 +30,7 @@ Invalid or oversized paste is refused whole; it never truncates a folder path.
   fields under a hidden parent. The window was active on Wayland and received
   the clipboard-change event; a foreign owner held its text pipe for 3.5 seconds
   and offered only 1024 bytes. The TextField control paused its event loop for
-  **2102 ms**; RAMen's replacements kept their 100 ms timer within **111 ms**.
+  **2007 ms**; RAMen's replacements kept their 100 ms timer within **110 ms**.
 - That native driver also passed a Japanese/emoji preedit and commit, rejection
   of an oversized input-method edit with selection/undo preserved, and invocation
   of the custom menu's Paste through a recording transport. This isolates the
@@ -39,7 +39,9 @@ Invalid or oversized paste is refused whole; it never truncates a folder path.
   menu paste through its actual shared runtime and Python worker. The Apps
   search field displayed the requested `Hyprland` text. The screenshots below
   are direct `grim` region captures at 2×, 840 × 580 pixels, of the panel's top.
-  They are native captures, with no resampling or retouching.
+  They are native captures, with no resampling or retouching. Their runtime
+  source is `dbcccb3b4bb965fc4a22c87f9a32ab89af212432`; the subsequent caret
+  cancellation change does not alter their appearance.
 
 | Own menu | Paste received |
 | --- | --- |
