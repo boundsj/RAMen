@@ -23,6 +23,7 @@ FocusScope {
   property real topPadding: 6
   property real bottomPadding: 6
   property Item background: null
+  readonly property bool inputOwned: activeFocus || contextMenu.opened
   onBackgroundChanged: if (background) { background.parent = field; background.anchors.fill = field; background.z = -1 }
   function select(start, end) { editor.select(start, end) }
   function selectAll() { editor.selectAll() }

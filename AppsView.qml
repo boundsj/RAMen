@@ -28,7 +28,7 @@ Item {
   property real now: Date.now()
   property real maxHeight: 600
 
-  readonly property bool inputOwned: searchInput.activeFocus
+  readonly property bool inputOwned: searchInput.inputOwned
   readonly property bool detailsOpen: details !== null
   readonly property int rowIndex: AM.selectedIndex(model)
   readonly property bool armed: !!model.armed

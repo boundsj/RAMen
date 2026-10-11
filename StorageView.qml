@@ -63,7 +63,7 @@ Item {
   readonly property var ledgerRows: visibleRows()
   property real now: Date.now()
   property real maxHeight: 600
-  readonly property bool inputOwned: pathInput.activeFocus || filterInput.activeFocus
+  readonly property bool inputOwned: pathInput.inputOwned || filterInput.inputOwned
   readonly property bool cachePending: pendingPurpose("reconciled")
   readonly property bool queryPending: pendingLedger()
   readonly property bool helperAvailable: !!owner && owner.storageHelperAvailable

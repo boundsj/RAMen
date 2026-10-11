@@ -86,6 +86,7 @@ TestCase {
     mouseClick(field, 20, 12, Qt.RightButton)
     var menu = findChild(field, "boundedInputMenu")
     tryVerify(function() { return menu.opened })
+    verify(field.inputOwned, "the menu keeps page shortcuts away from the field")
     compare(menu.palette.window, field.menuSurface)
     compare(menu.palette.text, field.color)
     var paste = findChild(field, "boundedPasteAction")
