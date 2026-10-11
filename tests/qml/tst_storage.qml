@@ -11,7 +11,7 @@ TestCase {
   width: 800; height: 900
   Window { id: shotWindow; width: 420; height: 900; visible: true; color: Color.popups.background }
   Component { id: runtimeComponent; RamanRuntime { ipcEnabled: false } }
-  Component { id: viewComponent; StorageView { width: 400; maxHeight: 750 } }
+  Component { id: viewComponent; StorageView { progressive: false; width: 400; maxHeight: 750 } }
   Component {
     id: panelComponent
     QtObject {

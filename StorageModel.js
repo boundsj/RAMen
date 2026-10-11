@@ -113,13 +113,13 @@ function accept(s, message) {
   // resolved and therefore omit scanId. Never forgive an explicit wrong ID.
   if (entry.scanId && message.scanId !== entry.scanId
       && !(message.type === "error" && message.scanId === undefined)) return null
-  if (message.type === "storage-children" && (message.snapshotId !== entry.args.snapshotId
+  if (message.type === "storage-children" && (message.snapshotId !== (entry.args.jobId || entry.args.snapshotId)
       || (entry.args.nodeId && message.nodeId !== entry.args.nodeId)
       || message.offset !== entry.args.offset || message.filter !== entry.args.filter)) return null
-  if (message.type === "storage-action" && (message.snapshotId !== entry.args.snapshotId
+  if (message.type === "storage-action" && (message.snapshotId !== (entry.args.jobId || entry.args.snapshotId)
       || message.nodeId !== entry.args.nodeId || message.action !== entry.args.action)) return null
   if (message.type !== "error" && message.type !== "storage-progress") {
-    var expected = { "storage.browse": "storage-browse", "storage.mounts": "storage-capacity", "storage.children": "storage-children", "storage.action": "storage-action" }[entry.command] || "storage-result"
+    var expected = { "storage.locations": "storage-locations", "storage.job.children": "storage-children", "storage.job.action": "storage-action", "storage.browse": "storage-browse", "storage.mounts": "storage-capacity", "storage.children": "storage-children", "storage.action": "storage-action" }[entry.command] || "storage-result"
     if (message.type !== expected) return null
   }
   var next = Object.assign({}, s, { pending: Object.assign({}, s.pending) })

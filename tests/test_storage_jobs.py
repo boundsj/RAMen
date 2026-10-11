@@ -86,9 +86,8 @@ class JobTests(unittest.TestCase):
             (self.scope / str(i)).write_text('x')
         self.start(); first = self.step()
         (self.scope / 'new').write_text('new')
-        with self.assertRaises(S.StorageError) as caught:
-            self.step()
-        self.assertEqual(caught.exception.code, 'node-changed')
+        paused = self.step()
+        self.assertEqual(paused['pauseReason'], 'node-changed')
         saved = J.cached(dict(jobId=self.job_id), self.cache)['snapshot']
         self.assertEqual(saved['entries'], first['entries'])
 

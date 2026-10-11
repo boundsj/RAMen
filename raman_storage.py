@@ -1228,7 +1228,7 @@ def worker_main():
             sys.stdout.buffer.flush()
         else:
             cache = Cache(validated=command.get("_validated"))
-            if name in ("storage.locations", "storage.start", "storage.step", "storage.job", "storage.job.children", "storage.job.action"):
+            if name in ("storage.locations", "storage.start", "storage.step", "storage.pause", "storage.job", "storage.job.children", "storage.job.action"):
                 sys.modules.setdefault("raman_storage", sys.modules[__name__])
                 import raman_storage_jobs as jobs
                 result = jobs.dispatch(command, cache)
@@ -1306,7 +1306,7 @@ class Controller:
     def handle(self, command):
         request_id = command.get("requestId")
         name = command.get("command")
-        allowed = {"storage.locations", "storage.start", "storage.step", "storage.job", "storage.job.children", "storage.job.action", "storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
+        allowed = {"storage.locations", "storage.start", "storage.step", "storage.pause", "storage.job", "storage.job.children", "storage.job.action", "storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
         if name not in allowed:
             return error(request_id, "unknown-command", "unknown storage command")
         client = command.get("clientId")

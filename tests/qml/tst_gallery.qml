@@ -364,6 +364,13 @@ TestCase {
   function storageReply(view, purpose, fields) {
     var id = ""
     for (var key in view.session.pending) if (view.session.pending[key].purpose === purpose) id = key
+    if (!id && purpose === "cached") {
+      for (var request in view.session.pending) if (view.session.pending[request].purpose === "jobcache") {
+        view.accept({requestId:request,clientId:view.session.clientId,generation:view.session.generation,type:"storage-result",status:"unscanned",snapshot:null})
+        break
+      }
+      for (var legacy in view.session.pending) if (view.session.pending[legacy].purpose === "cached") id=legacy
+    }
     verify(!!id, purpose + " outstanding")
     view.accept(Object.assign({ requestId: id, clientId: view.session.clientId, generation: view.session.generation }, fields))
   }
@@ -428,6 +435,7 @@ TestCase {
     s = storage({ light: true }); shot(s, "storage-ready-420-light")
     s = storage({ width: 340 }); shot(s, "storage-ready-340-dark")
     s = storage({})
+    s.view.progressive=false
     s.view.scan()
     storageReply(s.view, "scan", { type: "storage-progress", status: "scanning", scanId: "0123456789abcdef0123456789abcdef",
       entries: 18342, unreadable: 2, excluded: 1, changed: 0 })

@@ -425,7 +425,17 @@ def step(command, cache, limits=None):
                         pauseReason=pause_reason)
             save_metadata(db, meta)
             db.commit()
-        except (S.StorageError, sqlite3.Error):
+        except S.StorageError as exc:
+            db.rollback()
+            if exc.code != 'node-changed':
+                raise
+            # Never seek an old directory cookie through a modified namespace.
+            # Earlier committed rows survive, but this frontier needs a rescan.
+            meta = json.loads(db.execute("SELECT value FROM metadata WHERE key='job'").fetchone()[0])
+            meta.update(status='paused', pauseReason=exc.code)
+            save_metadata(db, meta)
+            db.commit()
+        except sqlite3.Error:
             db.rollback()
             raise
         return dict(status=meta['status'], snapshot=metadata(db, meta))
@@ -513,9 +523,18 @@ def action(command, cache):
             os.close(fd)
 
 
+def pause(command, cache):
+    with inventory(cache, command.get('jobId'), write=True) as (db, meta):
+        if meta['status'] != 'ready':
+            meta['status'] = 'paused'
+            save_metadata(db, meta)
+            db.commit()
+        return dict(status=meta['status'], snapshot=metadata(db, meta))
+
+
 def dispatch(command, cache):
     name = command['command']
     handlers = {'storage.locations': lambda c, _: location_plan(c.get('path')),
-                'storage.start': start, 'storage.step': step, 'storage.job': cached,
+                'storage.start': start, 'storage.step': step, 'storage.pause': pause, 'storage.job': cached,
                 'storage.job.children': children, 'storage.job.action': action}
     return handlers[name](command, cache)
