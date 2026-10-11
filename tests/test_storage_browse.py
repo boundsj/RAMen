@@ -64,3 +64,12 @@ class BrowseTests(unittest.TestCase):
         for offset in [-1, True, '0']:
             with self.assertRaises(storage.StorageError):
                 storage.browse(dict(path=self.temp.name, offset=offset))
+
+    def test_exact_page_of_folders_then_files_has_no_empty_continuation(self):
+        for i in range(3):
+            os.mkdir(self.path + ('/folder-%d' % i).encode())
+        for i in range(4):
+            Path(self.temp.name, 'file-%d' % i).write_text('x')
+        result = storage.browse(dict(path=self.temp.name, limit=3))
+        self.assertEqual(len(result['rows']), 3)
+        self.assertIsNone(result['nextOffset'])

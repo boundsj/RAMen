@@ -298,15 +298,15 @@ def browse(command, base=None):
                 cursor += 1
                 if cursor <= offset:
                     continue
-                if len(rows) >= limit:
-                    more = True
-                    cursor -= 1
-                    break
                 try:
                     if not entry.is_dir(follow_symlinks=False):
                         continue
                 except OSError:
                     continue
+                if len(rows) >= limit:
+                    more = True
+                    cursor -= 1
+                    break
                 child = os.path.join(path, os.fsencode(entry.name))
                 positions.append(cursor)
                 rows.append(dict(name=display(os.fsencode(entry.name)),

@@ -103,6 +103,17 @@ TestCase {
       {tag:"helper",code:"worker-failed",phase:"helper-failed",invalid:false}
     ]
   }
+  function test_action_error_is_visible_without_expanding_details() {
+    var v=setup().view; seed(v)
+    v.status="Path copied"; v.action("copy")
+    reply(v,"action",{type:"error",code:"node-changed",message:"Changed entry"})
+    verify(v.status.indexOf("Couldn’t copy")>=0); verify(!v.showDetails)
+  }
+  function test_failed_early_scan_restarts_directory_discovery() {
+    var v=setup().view; v.scan()
+    reply(v,"scan",{type:"error",code:"scan-entry-limit",message:"Large tree"})
+    verify(pending(v,"browse")!=="")
+  }
   function test_failure_states(data) {
     var v=setup().view; seed(v); v.scan()
     reply(v,"scan",{type:"storage-progress",status:"scanning",scanId:"owned",entries:11})

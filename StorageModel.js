@@ -32,7 +32,7 @@ function failure(code) {
   if (code === "stale-snapshot")
     return { state: "cache-invalid", invalidates: true, text: "Cached snapshot expired or exceeds limits — scan explicitly" }
   if (code === "cache-size-limit")
-    return { state: "limited", invalidates: false, text: "The scan cache is full — your drive is not. Try a smaller folder for now." }
+    return { state: "limited", invalidates: false, text: "There isn’t room for more scan data — check free space or try a smaller folder." }
   if (code === "scan-time-limit")
     return { state: "limited", invalidates: false, text: "This bowl needs more time — try exploring one folder at a time." }
   if (code === "scan-entry-limit")

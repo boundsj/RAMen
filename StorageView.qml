@@ -410,6 +410,7 @@ Item {
           && !(purpose === "capacity" && (scanning || reconciling || snapshot || terminalStatus))) {
         phase = failure.state; status = failure.text
       }
+      if (purpose === "action") status = "Couldn’t " + (result.entry.args.action === "copy" ? "copy this path" : "open this folder") + " — " + (message.code === "node-changed" ? "it changed since the scan; rescan to try again" : "see technical details")
       if (purpose === "ledger") {
         // A failed query leaves the old listing visible with its committed filter.
         filter = listing ? listing.filter || "" : ""; filterInput.text = filter
@@ -425,6 +426,7 @@ Item {
         } else {
           terminalStatus = failure.text + (snapshot ? " · older snapshot shown" : " · no previous snapshot")
           status = terminalStatus
+          if (!snapshot && !failure.invalidates) send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 12 }), "browse")
           // An interrupted commit may have changed authoritative selection.
           if (message.commitState === "unknown" || message.commitState === "committed") send("storage.cached", scope, "reconciled")
         }
@@ -671,7 +673,7 @@ Item {
       StorageCaption { width: parent.width; visible: !root.snapshot && !root.scanning; text: "Explore a folder, or scan this one to find the big ingredients. Nothing gets deleted." }
       Column {
         width: parent.width; spacing: Style.space(4)
-        visible: !root.snapshot && !root.scanning && root.folders.length > 0
+        visible: !root.snapshot && !root.scanning
         Repeater {
           model: root.folders
           StorageButton {
