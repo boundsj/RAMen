@@ -1228,7 +1228,15 @@ def worker_main():
             sys.stdout.buffer.flush()
         else:
             cache = Cache(validated=command.get("_validated"))
-            if name == "storage.scan":
+            if name in ("storage.locations", "storage.start", "storage.step", "storage.job", "storage.job.children", "storage.job.action"):
+                sys.modules.setdefault("raman_storage", sys.modules[__name__])
+                import raman_storage_jobs as jobs
+                result = jobs.dispatch(command, cache)
+                if name == "storage.job.action":
+                    action_complete = True
+                kind = "storage-children" if name == "storage.job.children" else "storage-action" if name == "storage.job.action" else "storage-locations" if name == "storage.locations" else "storage-result"
+                send(kind, **result)
+            elif name == "storage.scan":
                 scanner = Scanner(unpack_path(command.get("path")), cache, command["scanId"],
                                   lambda data: send("storage-progress", status="scanning", **data))
                 metadata = scanner.prepare()
@@ -1298,7 +1306,7 @@ class Controller:
     def handle(self, command):
         request_id = command.get("requestId")
         name = command.get("command")
-        allowed = {"storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
+        allowed = {"storage.locations", "storage.start", "storage.step", "storage.job", "storage.job.children", "storage.job.action", "storage.browse", "storage.mounts", "storage.scan", "storage.cancel", "storage.leave", "storage.children", "storage.cached", "storage.action"}
         if name not in allowed:
             return error(request_id, "unknown-command", "unknown storage command")
         client = command.get("clientId")
@@ -1411,8 +1419,8 @@ class Controller:
 
     def launch(self):
         for command in list(self.pending):
-            scan = command["command"] in ("storage.scan", "storage.reconcile")
-            active = [j for j in self.jobs.values() if (j["command"]["command"] in ("storage.scan", "storage.reconcile")) == scan]
+            scan = command["command"] in ("storage.scan", "storage.reconcile", "storage.start", "storage.step")
+            active = [j for j in self.jobs.values() if (j["command"]["command"] in ("storage.scan", "storage.reconcile", "storage.start", "storage.step")) == scan]
             if active:
                 continue  # one scanner + one short query worker, including reaping
             self.pending.remove(command)
