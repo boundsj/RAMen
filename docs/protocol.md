@@ -1195,3 +1195,32 @@ The `apps-page` `units` add `gpuMemoryKb` and `gpu`; `gpu.units` names each
 GPU field's unit and meaning (`null` while `inactive`, to keep Memory-only
 messages small). Kill, details and query actions are unchanged:
 GPU readings never feed membership, protection or signals.
+
+## Explicit clipboard input
+
+The shared runtime sends these only for a Paste gesture. Clipboard changes do
+not send a command or read contents. They use the Storage controller's bounded
+owned worker queue, generation checks and process-group cleanup; no Storage
+cache is opened. A stable `paste` client avoids allocating a client per popup.
+
+```json
+{"command":"input.paste","requestId":"p:paste-client:1","clientId":"paste-client","generation":1,"limit":128,"primary":false}
+{"type":"input-result","requestId":"p:paste-client:1","clientId":"paste-client","generation":1,"text":"one line"}
+{"command":"input.cancel","requestId":"p:paste-client:2","clientId":"paste-client","generation":2}
+```
+
+`limit` must be an integer from 1 to 2048 UTF-16 units; `primary` must be a
+boolean and defaults to false (true reads the middle-button primary selection).
+Apps search uses 256, Storage filter 128 and a folder path 2048. The helper reads
+at most 8192 bytes plus one overflow-detection byte, with a one-second total
+read/exit deadline. It rejects invalid UTF-8, ASCII controls and Unicode line
+separators, and refuses a whole paste when its insertion would exceed the field
+limit. It never truncates a path. There is no clipboard persistence or logging.
+
+Errors retain request/client/generation identity and use `clipboard-unavailable`,
+`clipboard-timeout`, `clipboard-too-large`, `clipboard-invalid` or `bad-request`.
+Missing optional `wl-paste` disables paste without disabling typing. The runtime
+also cancels a queued request after 2.5 seconds; focus, visibility, edit or
+navigation changes invalidate it. A helper restart invalidates the pending read.
+Only the originating field accepts a matching reply, and only at its captured
+text/selection/caret. `input` replies and errors never enter Storage's reply stream.

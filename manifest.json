@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "boundsj.raman",
   "name": "RAMen",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "boundsj",
   "license": "MIT",
   "description": "RAM gauge, guarded app termination, memory history, opt-in sustained incident alerts, an on-demand storage explorer and an Apps page with CPU/RAM rails and per-app GPU memory where the kernel reports it.",
