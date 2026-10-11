@@ -14,7 +14,7 @@ Item {
   property var panel: null
   property bool progressive: true
   readonly property var job: progressive && owner ? owner.storageJob : null
-  readonly property bool jobHere: !!job && !!snapshot && snapshot.job && !!job.snapshot && snapshot.snapshotId === job.snapshot.snapshotId
+  readonly property bool jobHere: !!job && !!snapshot && !!snapshot.job && !!job.snapshot && snapshot.snapshotId === job.snapshot.snapshotId
   readonly property bool jobRunning: jobHere && job.running
   readonly property bool jobBusy: !!job && (job.running || job.inFlight)
   property var mainStorage: null
@@ -32,6 +32,7 @@ Item {
   property bool showDetails: false
   property var snapshot: null
   property var listing: null
+  property bool refreshQueued: false
   property var loaded: ({})
   property string selectedId: ""
   property var crumbs: []
@@ -188,7 +189,7 @@ Item {
     status = "Discovering capacity / cached snapshot"; error = ""
     send("storage.mounts", scope, "capacity")
     send(progressive ? "storage.job" : "storage.cached", scope, progressive ? "jobcache" : "cached")
-    send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 12 }), "browse")
+    send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 8 }), "browse")
     send("storage.mounts", { offset: 0, limit: 50 }, "mounts")
     if (progressive) send("storage.locations", { path: Quickshell.env("HOME") }, "locations")
   }
@@ -221,6 +222,7 @@ Item {
     discover()
   }
   function resetNavigation() {
+    refreshQueued = false
     loaded = ({}); pageOffsets = []; clearMemberView()
     rowIndex = 0; selectedId = ""; crumbs = []; filter = ""; filterInput.text = ""
   }
@@ -441,7 +443,7 @@ Item {
         } else {
           terminalStatus = failure.text + (snapshot ? " · older snapshot shown" : " · no previous snapshot")
           status = terminalStatus
-          if (!snapshot && !failure.invalidates) send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 12 }), "browse")
+          if (!snapshot && !failure.invalidates) send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 8 }), "browse")
           // An interrupted commit may have changed authoritative selection.
           if (message.commitState === "unknown" || message.commitState === "committed") send("storage.cached", scope, "reconciled")
         }
@@ -522,11 +524,15 @@ Item {
         }
       }
       else {
-        if (snapshot && snapshot.job && message.snapshot) snapshot = message.snapshot
+        if (snapshot && snapshot.job && message.snapshot && message.snapshot.updatedAt >= snapshot.updatedAt) snapshot = message.snapshot
         listing = message; syncSelection(result.entry.selection || selectedId)
         crumbs = message.breadcrumbs || [{ nodeId: message.nodeId, name: message.node.name }]
         var dirs = message.segments.filter(function(r) { return r.kind === "directory" }).slice(0, 3)
         if (owner.storageShowMap && !filter) for (var i = 0; i < dirs.length; i++) query(dirs[i].nodeId, 0, "band")
+        if (refreshQueued && snapshot && snapshot.job) {
+          refreshQueued = false
+          Qt.callLater(function() { if (root.snapshot && root.snapshot.job && root.listing && !root.queryPending) root.query(root.listing.nodeId, root.listing.offset, "ledger", 0, root.selectedId) })
+        }
       }
     } else if (message.type === "storage-action") {
       if (message.action === "copy") status = "Path copied"
@@ -543,7 +549,8 @@ Item {
       : "Scan ready" + (value.coverage === "partial" ? " · some ingredients could not be measured" : "")
     if (value.pauseReason) status = value.pauseReason === "node-changed" ? "Progress saved · a folder changed; rescan for a fresh view" : "Progress saved · scan budget reached; explore a smaller folder"
     if (changed) { resetNavigation(); listing = null }
-    if (!queryPending) query(listing ? listing.nodeId : value.rootNodeId, listing ? listing.offset : 0, "ledger", 0, selectedId)
+    refreshQueued = queryPending
+    if (!refreshQueued) query(listing ? listing.nodeId : value.rootNodeId, listing ? listing.offset : 0, "ledger", 0, selectedId)
   }
   Connections {
     target: root.job
@@ -723,6 +730,14 @@ Item {
       PanelSeparator { foreground: root.foreground }
       StorageHeader { text: root.snapshot ? "WHAT’S IN THIS BOWL" : "WHAT’S FILLING YOUR BOWL?" }
       StorageCaption { width: parent.width; visible: !root.snapshot && !root.scanning; text: "Explore a folder, or scan this one to find the big ingredients. Nothing gets deleted." }
+      Flow {
+        width: parent.width; spacing: Style.space(6)
+        StorageButton { text: root.snapshot ? "Rescan" : root.scope.kind === "main" ? "Scan main storage" : "Scan this folder"; primary: !root.snapshot; enabled: root.entriesReady && !root.jobBusy; onClicked: root.scan() }
+        StorageButton { text: root.jobRunning ? "Pause & keep results" : "Cancel"; visible: root.scanning || root.jobRunning; enabled: root.jobRunning || (root.scanning && !!root.scanId && !root.reconciling); onClicked: root.cancel() }
+        StorageButton { text: "Continue scan"; primary: true; visible: !!root.snapshot && !!root.snapshot.job && root.snapshot.status !== "ready" && !root.jobRunning; enabled: !!root.snapshot && !root.jobBusy && !root.snapshot.pauseReason; onClicked: root.job.resume(root.snapshot) }
+        StorageButton { text: "Reload cache"; visible: !!root.snapshot || root.phase === "helper-failed" || root.phase === "cache-invalid"; enabled: root.helperAvailable && !root.scanning && !root.reconciling; onClicked: root.reloadCache() }
+        StorageButton { text: "Up"; visible: !!root.listing && !!root.listing.node.parentId; enabled: root.entriesReady && !!root.listing && !!root.listing.node.parentId; onClicked: root.up() }
+      }
       Column {
         width: parent.width; spacing: Style.space(4)
         visible: !root.snapshot && !root.scanning
@@ -739,7 +754,7 @@ Item {
         }
         StorageButton { visible: !!root.folderParent; text: "Parent folder"; iconName: "back"; onClicked: root.changeScope({ pathBytes: root.folderParent }) }
         StorageCaption { width: parent.width; text: "Folder names only · sizes appear after you scan" }
-        StorageButton { visible: root.folderNext !== null; text: "More folders"; onClicked: root.send("storage.browse", Object.assign({}, root.scope, { offset: root.folderNext, limit: 12 }), "browse") }
+        StorageButton { visible: root.folderNext !== null; text: "More folders"; onClicked: root.send("storage.browse", Object.assign({}, root.scope, { offset: root.folderNext, limit: 8 }), "browse") }
       }
       Flow {
         width: parent.width; spacing: Style.space(4)
@@ -764,17 +779,9 @@ Item {
           id: allocationNote
           width: parent.width - x
           text: root.listing ? "known allocation · " + SM.age(root.snapshot, root.now) + " · folder itself " + SM.bytes(root.listing.node.ownAllocatedBytes)
-            + (root.listing.node.coverage === "partial" ? " · lower bound, unreadable/excluded entries" : "")
+            + (root.listing.node.coverage === "partial" ? (root.snapshot && root.snapshot.job && root.snapshot.status !== "ready" ? " · still exploring" : " · lower bound, unreadable/excluded entries") : "")
             + (root.listing.activationDurability === "pending" ? " · activation durability pending" : "") : ""
         }
-      }
-      Flow {
-        width: parent.width; spacing: Style.space(6)
-        StorageButton { text: root.snapshot ? "Rescan" : root.scope.kind === "main" ? "Scan main storage" : "Scan this folder"; primary: !root.snapshot; enabled: root.entriesReady && !root.jobBusy; onClicked: root.scan() }
-        StorageButton { text: root.jobRunning ? "Pause & keep results" : "Cancel"; visible: root.scanning || root.jobRunning; enabled: root.jobRunning || (root.scanning && !!root.scanId && !root.reconciling); onClicked: root.cancel() }
-        StorageButton { text: "Continue scan"; primary: true; visible: !!root.snapshot && !!root.snapshot.job && root.snapshot.status !== "ready" && !root.jobRunning; enabled: !!root.snapshot && !root.jobBusy && !root.snapshot.pauseReason; onClicked: root.job.resume(root.snapshot) }
-        StorageButton { text: "Reload cache"; visible: !!root.snapshot || root.phase === "helper-failed" || root.phase === "cache-invalid"; enabled: root.helperAvailable && !root.scanning && !root.reconciling; onClicked: root.reloadCache() }
-        StorageButton { text: "Up"; visible: !!root.listing && !!root.listing.node.parentId; enabled: root.entriesReady && !!root.listing && !!root.listing.node.parentId; onClicked: root.up() }
       }
       // State badge, activity and the backend's own status words.
       Row {

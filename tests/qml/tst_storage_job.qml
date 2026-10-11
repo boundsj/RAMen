@@ -37,7 +37,7 @@ TestCase {
     if(job.inFlight) answer(job,"restore",{type:"storage-result",status:"unscanned",snapshot:null})
   }
   function snapshot(status) {
-    return {job:true,snapshotId:"a".repeat(32),rootNodeId:"0".repeat(31)+"1",status:status,coverage:"partial",entries:12,pendingFolders:3,pauseReason:"",knownAllocatedBytes:100,roots:[],capturedAt:1}
+    return {job:true,snapshotId:"a".repeat(32),rootNodeId:"0".repeat(31)+"1",status:status,coverage:"partial",entries:12,pendingFolders:3,pauseReason:"",knownAllocatedBytes:100,roots:[],capturedAt:1,updatedAt:1}
   }
   function test_closing_popup_does_not_cancel_explicit_job() {
     var s=setup(); initial(s.job)
@@ -82,5 +82,25 @@ TestCase {
     answer(s.job,"step",{type:"storage-result",snapshot:snapshot("scanning")})
     answer(s.job,"pause",{type:"storage-result",snapshot:snapshot("paused")})
     verify(s.job.start({path:"/other"}))
+  }
+  function test_final_checkpoint_is_refreshed_after_older_page_query() {
+    var s=setup(); initial(s.job)
+    var first=snapshot("scanning"), ready=Object.assign({},first,{status:"ready",updatedAt:2,entries:25,pendingFolders:0})
+    s.view.showJob(first)
+    verify(s.view.queryPending)
+    s.view.showJob(ready)
+    verify(s.view.refreshQueued)
+    var id=""
+    for(var key in s.view.session.pending) if(s.view.session.pending[key].purpose==="ledger") id=key
+    var node={nodeId:first.rootNodeId,parentId:null,name:"fixture",kind:"directory",coverage:"partial",knownAllocatedBytes:100,ownAllocatedBytes:0}
+    var reply={type:"storage-children",clientId:s.view.session.clientId,generation:s.view.session.generation,requestId:id,
+      snapshot:first,snapshotId:first.snapshotId,nodeId:node.nodeId,node:node,offset:0,filter:"",total:0,nextOffset:null,rows:[],segments:[],breadcrumbs:[]}
+    s.view.accept(reply)
+    compare(s.view.snapshot.updatedAt,2)
+    tryVerify(function(){return s.view.queryPending})
+    for(var next in s.view.session.pending) if(s.view.session.pending[next].purpose==="ledger") id=next
+    s.view.accept(Object.assign({},reply,{requestId:id,snapshot:ready}))
+    compare(s.view.snapshot.entries,25)
+    tryVerify(function(){return !s.view.queryPending}); verify(!s.view.refreshQueued)
   }
 }
