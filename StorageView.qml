@@ -18,6 +18,8 @@ Item {
   readonly property bool jobRunning: jobHere && job.running
   readonly property bool jobBusy: !!job && (job.running || job.inFlight)
   property var mainStorage: null
+  readonly property var mainPlan: snapshot && snapshot.job && snapshot.kind === "main"
+    ? { roots: snapshot.roots, note: snapshot.scopeNote } : mainStorage
   readonly property var runtime: panel ? panel.runtime : null
   property var owner: null
   property var session: null
@@ -40,6 +42,7 @@ Item {
   property string filter: ""
   property string status: "Discovering capacity"
   property string error: ""
+  property string errorPurpose: ""
   property string phase: "discovering"
   property string terminalStatus: ""
   property string scanId: ""
@@ -187,7 +190,7 @@ Item {
       return
     }
     phase = "discovering"; terminalStatus = ""
-    status = "Discovering capacity / cached snapshot"; error = ""
+    status = "Discovering capacity / cached snapshot"; error = ""; errorPurpose = ""
     send("storage.mounts", scope, "capacity")
     send(progressive ? "storage.job" : "storage.cached", scope, progressive ? "jobcache" : "cached")
     if (scope.kind !== "main") send("storage.browse", Object.assign({}, scope, { offset: 0, limit: 8 }), "browse")
@@ -432,7 +435,7 @@ Item {
     session = result.state; persist()
     var purpose = result.entry.purpose
     if (message.type === "error") {
-      error = message.code + ": " + message.message
+      error = message.code + ": " + message.message; errorPurpose = purpose
       var failure = SM.failure(message.code)
       // Volume-list discovery is independent of the selected scope.
       if (purpose !== "locations" && purpose !== "browse" && purpose !== "mounts" && purpose !== "band" && purpose !== "action"
@@ -547,12 +550,16 @@ Item {
           memberSource = Object.assign({}, message, { segments: fresh })
         }
         listing = message; syncSelection(result.entry.selection || selectedId)
+        if (snapshot && snapshot.job && errorPurpose === "ledger") {
+          error = ""; errorPurpose = ""; updateJobStatus(snapshot)
+        }
         crumbs = message.breadcrumbs || [{ nodeId: message.nodeId, name: message.node.name }]
         var dirs = message.segments.filter(function(r) { return r.kind === "directory" }).slice(0, 3)
         if (owner.storageShowMap && !filter) for (var i = 0; i < dirs.length; i++) query(dirs[i].nodeId, 0, "band")
         drainRefresh()
       }
     } else if (message.type === "storage-action") {
+      if (errorPurpose === "action") { error = ""; errorPurpose = "" }
       if (message.action === "copy") status = "Path copied"
       else status = "Directory handed to file manager"
     }
@@ -577,25 +584,33 @@ Item {
     var changed = !snapshot || snapshot.snapshotId !== value.snapshotId
     snapshot = value
     scanning = false; reconciling = false
+    updateJobStatus(value)
+    if (changed) { retireInventoryRequests(); resetNavigation(); listing = null }
+    loaded = ({})
+    refreshQueued = queryPending
+    if (!refreshQueued) query(listing ? listing.nodeId : value.rootNodeId, listing ? listing.offset : 0, "ledger", 0, selectedId)
+  }
+  function updateJobStatus(value) {
     phase = job && job.running && job.snapshot && job.snapshot.snapshotId === value.snapshotId
       ? "scanning" : value.status === "ready" ? (value.coverage === "partial" ? "partial" : "ready") : "paused"
     status = phase === "scanning" ? "Simmering · " + value.entries + " entries · " + value.pendingFolders + " folders still to explore"
       : phase === "paused" ? "Progress saved · " + value.entries + " entries · continue whenever you like"
       : "Scan ready" + (value.coverage === "partial" ? " · some ingredients could not be measured" : "")
     if (value.pauseReason) status = value.pauseReason === "node-changed" ? "Progress saved · a folder changed; rescan for a fresh view" : "Progress saved · scan budget reached; explore a smaller folder"
-    if (changed) { retireInventoryRequests(); resetNavigation(); listing = null }
-    loaded = ({})
-    refreshQueued = queryPending
-    if (!refreshQueued) query(listing ? listing.nodeId : value.rootNodeId, listing ? listing.offset : 0, "ledger", 0, selectedId)
+    if (job && job.snapshot && job.snapshot.snapshotId === value.snapshotId && job.error) {
+      error = job.error; errorPurpose = "job"; phase = SM.failure(job.error.split(":")[0]).state
+      status = "Saved results · " + SM.failure(job.error.split(":")[0]).text
+    }
   }
   Connections {
     target: root.job
     function onUpdated(value, jobScope) {
       if ((value && root.snapshot && root.snapshot.snapshotId === value.snapshotId) || SM.sameScope(jobScope, root.scope)) {
+        if (!root.job.error && root.errorPurpose === "job") { root.error = ""; root.errorPurpose = "" }
         if (value) root.showJob(value)
         if (root.job.error) {
           var failure = SM.failure(root.job.error.split(":")[0])
-          root.error = root.job.error; root.phase = failure.state
+          root.error = root.job.error; root.errorPurpose = "job"; root.phase = failure.state
           root.status = (root.snapshot ? "Saved results · " : "Couldn’t start scan · ") + failure.text
         }
       }
@@ -697,7 +712,7 @@ Item {
         StorageButton { id: pathGo; text: "Go"; onClicked: { root.changeScope({ path: pathInput.text }); pathInput.focus = false } }
       }
 
-      StorageCaption { width: parent.width; visible: root.scope.kind === "main" && !!root.mainStorage; text: root.mainStorage ? root.mainStorage.note + " Includes " + root.mainStorage.roots.map(function(r) { return r.path }).join(", ") + "." : "" }
+      StorageCaption { width: parent.width; visible: root.scope.kind === "main" && !!root.mainPlan; text: root.mainPlan ? root.mainPlan.note + " Includes " + root.mainPlan.roots.map(function(r) { return r.path }).join(", ") + "." : "" }
       Row {
         visible: !!root.job && root.job.running && !root.jobHere
         width: parent.width; spacing: Style.space(6)
