@@ -382,6 +382,7 @@ Item {
     RamanTextField {
       id: searchInput
       clipboard: root.runtime ? root.runtime.inputClipboard : null
+      menuSurface: root.surface
       objectName: "appsSearchInput"
       width: parent.width
       maximumLength: 256

@@ -11,6 +11,7 @@ FocusScope {
   property alias color: editor.color
   property string placeholderText: ""
   property color placeholderTextColor: "#808080"
+  property color menuSurface: "white"
   property alias selectionColor: editor.selectionColor
   property alias selectedTextColor: editor.selectedTextColor
   property alias selectByMouse: editor.selectByMouse
@@ -176,6 +177,13 @@ FocusScope {
   Menu {
     id: contextMenu
     objectName: "boundedInputMenu"
+    font: field.font
+    palette.window: field.menuSurface
+    palette.text: field.color
+    palette.windowText: field.color
+    palette.buttonText: field.color
+    palette.highlightedText: field.color
+    palette.highlight: Qt.rgba(field.color.r, field.color.g, field.color.b, 0.12)
     // Close synchronously before restoring editor focus for an async paste.
     enter: Transition {}
     exit: Transition {}

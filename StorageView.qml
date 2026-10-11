@@ -135,6 +135,7 @@ Item {
   component StorageField: RamanTextField {
     id: field
     clipboard: root.runtime ? root.runtime.inputClipboard : null
+    menuSurface: root.surface
     color: root.foreground
     font.family: root.fontFamily
     font.pixelSize: Style.font.bodySmall

@@ -86,6 +86,8 @@ TestCase {
     mouseClick(field, 20, 12, Qt.RightButton)
     var menu = findChild(field, "boundedInputMenu")
     tryVerify(function() { return menu.opened })
+    compare(menu.palette.window, field.menuSurface)
+    compare(menu.palette.text, field.color)
     var paste = findChild(field, "boundedPasteAction")
     verify(paste)
     paste.triggered()
