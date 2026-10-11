@@ -7,8 +7,9 @@
 - Explicit paste runs outside the UI thread with a byte cap, a total deadline
   and the field's length limit. Invalid, oversized or slow offers leave the
   field unchanged; moving, editing, hiding or closing the field cancels a read.
-- Native Unicode/input-method editing, selection and undo remain available;
-  long paths scroll to keep the caret visible. Paste requires the optional
+- Native Unicode/input-method editing, selection and undo/redo remain available;
+  each paste has its own undo step, separate from earlier and later typing.
+  Long paths scroll to keep the caret visible. Paste requires the optional
   `wl-paste` integration; no new settings or package installation is required.
 - Added backend, Qt and native Wayland regression checks. See
   [clipboard verification and scope](docs/qa/clipboard-v021.md).
